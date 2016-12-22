@@ -1,0 +1,6 @@
+This is the master branch of the git repo for rt-tests.
+
+The master branch is unused. You should use an existing branch instead.
+
+The stable/v1.0 branch contains the old stable version.
+The unstable/devel branches contain the development versions.
