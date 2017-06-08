@@ -4,3 +4,19 @@ The master branch is unused. You should use an existing branch instead.
 
 The stable/v1.0 branch contains the old stable version.
 The unstable/devel branches contain the development versions.
+
+
+BRANCH CHECKOUT
+
+To list available branches for tracking please do:
+	git branch -r
+
+To checkout stable/v1.0 and setup remote tracking to /origin/stable/v1.0 please do:
+	git checkout -b stable/v1.0 origin/stable/v1.0
+or
+	git checkout -b stable/v1.0 --track origin/stable/v1.0
+
+Older versions of git will not work with git checkout stable/v1.0.
+
+Similarly for the unstable/devel/v1.1.1 branch please do:
+	git checkout -b unstable/devel/v1.1.1 --track origin/unstable/devel/v1.1.1
