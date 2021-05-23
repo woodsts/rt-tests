@@ -17,7 +17,7 @@ cyclicdeadline \- This program is used to test the deadline scheduler (SCHED_DEA
 .PP
 .SH SYNOPSIS
 .B cyclicdeadline
-.RI "[-a [CPUSET]] [-D TIME] [-h]  [-i INTV] [--json FILENAME] [-s STEP] [-t NUM] [-q]"
+.RI "[-a [CPUSET]] [-D TIME] [--debug] [-h] [-i INTV] [--json FILENAME] [-s STEP] [-t NUM] [-q]"
 .PP
 .SH DESCRIPTION
 .B cyclicdeadline
@@ -31,6 +31,10 @@ Comma / hypen separated list of CPUs to run deadline tasks on
 .B \-D \-\-duration TIME
 Specify a length for the test to run
 Append 'm', 'h', or 'd' to specify minutes, hours, or days
+.TP
+.B \-\-debug
+Enable ftrace logging. When enabled cyclicdeadline will log the start
+of every cycle in the ftrace log buffer.
 .TP
 .B \-h \-\-help
 Show this help menu
