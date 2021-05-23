@@ -87,8 +87,9 @@ static int cpu_count;
 static int all_cpus;
 static int nr_threads;
 static int use_nsecs;
-static int mark_fd;
+static int mark_fd = -1;
 static int quiet;
+static int debug_enabled;
 static char jsonfile[MAX_PATH];
 
 static int find_mount(const char *mount, char *debugfs)
@@ -602,6 +603,7 @@ static void usage(int error)
 	       "-D TIME  --duration        Specify a length for the test run.\n"
 	       "                           Append 'm', 'h', or 'd' to specify minutes, hours or\n"
 	       "                           days\n"
+	       "         --debug           Enable ftrace logging\n"
 	       "-h       --help            Show this help menu.\n"
 	       "-i INTV  --interval        The shortest deadline for the tasks in us\n"
 	       "                           (default 1000us).\n"
@@ -985,7 +987,7 @@ static void write_stats(FILE *f, void *data)
 }
 
 enum options_valud {
-	OPT_AFFINITY=1, OPT_DURATION, OPT_HELP, OPT_INTERVAL,
+	OPT_AFFINITY=1, OPT_DURATION, OPT_DEBUG, OPT_HELP, OPT_INTERVAL,
 	OPT_JSON, OPT_STEP, OPT_THREADS, OPT_QUIET
 };
 
@@ -1019,6 +1021,7 @@ int main(int argc, char **argv)
 		static struct option options[] = {
 			{ "affinity",	optional_argument,	NULL,	OPT_AFFINITY },
 			{ "duration",	required_argument,	NULL,	OPT_DURATION },
+			{ "debug",	no_argument,		NULL,	OPT_DEBUG },
 			{ "help",	no_argument,		NULL,	OPT_HELP },
 			{ "interval",	required_argument,	NULL,	OPT_INTERVAL },
 			{ "json",	required_argument,	NULL,	OPT_JSON },
@@ -1061,6 +1064,9 @@ int main(int argc, char **argv)
 		case OPT_DURATION:
 		case 'D':
 			duration = parse_time_string(optarg);
+			break;
+	        case OPT_DEBUG:
+			debug_enabled = 1;
 			break;
 		case OPT_QUIET:
 		case 'q':
@@ -1106,7 +1112,8 @@ int main(int argc, char **argv)
 	if (mlockall(MCL_CURRENT|MCL_FUTURE) == -1)
 		warn("mlockall");
 
-	setup_ftrace_marker();
+	if (debug_enabled)
+		setup_ftrace_marker();
 
 	thread = calloc(nr_threads, sizeof(*thread));
 	sched_data = calloc(nr_threads, sizeof(*sched_data));
