@@ -232,6 +232,7 @@ class Tracer(Detector):
         'window'    : "hwlat_detector/window",
         'enable'    : "tracing_on",
         'threshold' : "tracing_thresh",
+        'cpumask'   : "tracing_cpumask",
     }
 
     class Sample:
@@ -410,6 +411,10 @@ if __name__ == '__main__':
                         dest="report",
                         help="filename for sample data")
 
+    parser.add_argument("--cpu-list", default=None,
+                        dest="cpulist",
+                        help="the CPUs for hwlat thread to move across")
+
     parser.add_argument("--debug", action="store_true", default=False,
                         dest="debug",
                         help="turn on debugging prints")
@@ -476,9 +481,23 @@ if __name__ == '__main__':
 
     reportfile = args.report
 
+    if args.cpulist:
+        cpumask = 0
+        for c in args.cpulist.split(','):
+            l, r = 0, 0
+            if '-' in c:
+                l, r = map(int, c.split('-'))
+            else:
+                l, r = map(int, [c, c])
+            for i in range(l, r + 1):
+                cpumask |= (1 << i)
+        debug("set tracing_cpumask to %x" % cpumask)
+        detect.set("cpumask", "%x" % cpumask)
+
     info("hwlatdetect:  test duration %d seconds" % detect.testduration)
     info("   detector: %s" % detect.type)
     info("   parameters:")
+    info("        CPU list:          %s"   % args.cpulist)
     info("        Latency threshold: %dus" % int(detect.get("threshold")))
     info("        Sample window:     %dus" % int(detect.get("window")))
     info("        Sample width:      %dus" % int(detect.get("width")))
