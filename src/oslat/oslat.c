@@ -334,10 +334,10 @@ static void insert_bucket(struct thread *t, stamp_t value)
 	assert(us > 0);
 
 	if (!g.preheat && g.trace_threshold && us >= g.trace_threshold) {
-		char *line = "%s: Trace threshold (%d us) triggered with %u us!\n"
+		char *line = "%s: Trace threshold (%d us) triggered on cpu %d with %u us!\n"
 		    "Stopping the test.\n";
-		tracemark(line, g.app_name, g.trace_threshold, us);
-		err_quit(line, g.app_name, g.trace_threshold, us);
+		tracemark(line, g.app_name, g.trace_threshold, t->core_i, us);
+		err_quit(line, g.app_name, g.trace_threshold, t->core_i, us);
 	}
 
 	/* Update max latency */
