@@ -1868,10 +1868,7 @@ int main(int argc, char **argv)
 		printf("Online CPUs = %d\n", online_cpus);
 	}
 
-	/* Restrict the main pid to the affinity specified by the user */
-	if (main_affinity_mask != NULL) {
-		set_main_thread_affinity(main_affinity_mask);
-	} else if (affinity_mask != NULL) {
+	if (affinity_mask != NULL) {
 		set_main_thread_affinity(affinity_mask);
 		if (verbose)
 			printf("Using %u cpus.\n",
@@ -2145,6 +2142,10 @@ int main(int argc, char **argv)
 			fatal("failed to create thread %d: %s\n", i, strerror(status));
 
 	}
+	/* Restrict the main pid to the affinity specified by the user */
+	if (main_affinity_mask != NULL)
+		set_main_thread_affinity(main_affinity_mask);
+
 	if (use_fifo) {
 		status = pthread_create(&fifo_threadid, NULL, fifothread, NULL);
 		if (status)
