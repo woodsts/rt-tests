@@ -30,7 +30,7 @@ prefix  ?= /usr/local
 bindir  ?= $(prefix)/bin
 mandir	?= $(prefix)/share/man
 
-CFLAGS ?= -Wall -Wno-nonnull
+CFLAGS ?= -Wall -Wno-nonnull -Wextra
 CPPFLAGS += -D_GNU_SOURCE -Isrc/include
 LDFLAGS ?=
 
@@ -253,4 +253,4 @@ help:
 
 .PHONY: tags
 tags:
-	ctags -R --extra=+f --c-kinds=+p --exclude=tmp --exclude=BUILD *
+	ctags -R --extras=+f --c-kinds=+p --exclude=tmp --exclude=BUILD *
