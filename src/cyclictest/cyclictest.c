@@ -1088,7 +1088,7 @@ static void process_options(int argc, char *argv[], int max_cpus)
 
 			if (setaffinity == AFFINITY_SPECIFIED && !affinity_mask)
 				display_help(1);
-			if (verbose)
+			if (verbose && affinity_mask)
 				printf("Using %u cpus.\n",
 					numa_bitmask_weight(affinity_mask));
 			break;
