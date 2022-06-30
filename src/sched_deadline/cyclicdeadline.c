@@ -80,7 +80,11 @@ struct sched_data {
 };
 
 static int shutdown;
-
+static int tracelimit;
+static int trace_marker;
+static pthread_mutex_t break_thread_id_lock = PTHREAD_MUTEX_INITIALIZER;
+static pid_t break_thread_id;
+static uint64_t break_thread_value;
 static pthread_barrier_t barrier;
 
 static int cpu_count;
@@ -667,6 +671,10 @@ static void teardown(void)
 
 	destroy_cpuset(CPUSET_ALL, 0);
 	destroy_cpuset(CPUSET_LOCAL, 1);
+
+	/* close any tracer file descriptors */
+	disable_trace_mark();
+
 }
 
 static void usage(int error)
@@ -689,6 +697,8 @@ static void usage(int error)
 	       "                           (default 500us).\n"
 	       "-t NUM   --threads         The number of threads to run as deadline (default 1).\n"
 	       "-q       --quiet           print a summary only on exit\n"
+	       "-b USEC  --breaktrace=USEC send break trace command when latency > USEC\n"
+	       "         --tracemark       write a trace mark when -b latency is exceeded\n"
 	       );
 	exit(error);
 }
@@ -825,6 +835,18 @@ void *run_deadline(void *data)
 
 	while (!shutdown) {
 		period = do_runtime(tid, sd, period);
+		if (tracelimit && (stat->max > tracelimit)) {
+			shutdown++;
+			pthread_mutex_lock(&break_thread_id_lock);
+			if (break_thread_id == 0) {
+				break_thread_id = stat->tid;
+				break_thread_value = stat->max;
+				tracemark("hit latency threshold (%lld > %d)",
+						 (unsigned long long) stat->max, tracelimit);
+			}
+			pthread_mutex_unlock(&break_thread_id_lock);
+			break;
+		}
 		sched_yield();
 	}
 	ret = sched_getattr(0, &attr, sizeof(attr), 0);
@@ -1063,9 +1085,10 @@ static void write_stats(FILE *f, void *data)
 	fprintf(f, "  }\n");
 }
 
-enum options_valud {
+enum options_values {
 	OPT_AFFINITY=1, OPT_DURATION, OPT_HELP, OPT_INTERVAL,
-	OPT_JSON, OPT_STEP, OPT_THREADS, OPT_QUIET
+	OPT_JSON, OPT_STEP, OPT_THREADS, OPT_QUIET,
+	OPT_BREAKTRACE, OPT_TRACEMARK,
 };
 
 int main(int argc, char **argv)
@@ -1104,9 +1127,11 @@ int main(int argc, char **argv)
 			{ "step",	required_argument,	NULL,	OPT_STEP },
 			{ "threads",	required_argument,	NULL,	OPT_THREADS },
 			{ "quiet",	no_argument,		NULL,	OPT_QUIET },
+			{ "breaktrace",       required_argument, NULL, OPT_BREAKTRACE },
+			{ "tracemark",	     no_argument,	NULL, OPT_TRACEMARK },
 			{ NULL,		0,			NULL,	0   },
 		};
-		c = getopt_long(argc, argv, "a::c:D:hi:s:t:q", options, NULL);
+		c = getopt_long(argc, argv, "a::c:D:hi:s:t:b:q", options, NULL);
 		if (c == -1)
 			break;
 		switch (c) {
@@ -1141,6 +1166,10 @@ int main(int argc, char **argv)
 		case 'D':
 			duration = parse_time_string(optarg);
 			break;
+		case 'b':
+		case OPT_BREAKTRACE:
+			tracelimit = atoi(optarg);
+			break;
 		case OPT_QUIET:
 		case 'q':
 			quiet = 1;
@@ -1148,6 +1177,9 @@ int main(int argc, char **argv)
 		case OPT_HELP:
 		case 'h':
 			usage(0);
+			break;
+		case OPT_TRACEMARK:
+			trace_marker = 1;
 			break;
 		default:
 			usage(1);
@@ -1186,6 +1218,8 @@ int main(int argc, char **argv)
 		warn("mlockall");
 
 	setup_ftrace_marker();
+	if (tracelimit && trace_marker)
+		enable_trace_mark();
 
 	thread = calloc(nr_threads, sizeof(*thread));
 	sched_data = calloc(nr_threads, sizeof(*sched_data));
@@ -1293,6 +1327,13 @@ int main(int argc, char **argv)
 		alarm(duration);
 
 	loop(sched_data, nr_threads);
+
+	if (tracelimit) {
+		if (break_thread_id) {
+			printf("# Break thread: %d\n", break_thread_id);
+			printf("# Break value: %llu\n", (unsigned long long)break_thread_value);
+		}
+	}
 
 	for (i = 0; i < nr_threads; i++) {
 

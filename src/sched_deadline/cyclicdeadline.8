@@ -50,6 +50,12 @@ The number of threads to run as deadline (default 1)
 .B \-q, \-\-quiet
 Print a summary only on exit. Useful for automated tests, where only
 the summary output needs to be captured.
+.TP
+.B \-b, \-\-breaktrace=USEC
+Send break trace command when latency > USEC
+.TP
+.B \-\-tracemark
+write a trace mark when \-b latency is exceeded.
 .br
 .SH AUTHOR
 cyclicdeadline was written by Steven Rostedt <rostedt@goodmis.org>
