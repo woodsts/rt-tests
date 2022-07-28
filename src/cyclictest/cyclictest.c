@@ -1270,8 +1270,6 @@ static void process_options(int argc, char *argv[], int max_cpus)
 	/* if smp wasn't requested, test for numa automatically */
 	if (!smp) {
 		numa = numa_initialize();
-		if (setaffinity == AFFINITY_UNSPECIFIED)
-			setaffinity = AFFINITY_USEALL;
 	}
 
 	if (option_affinity) {
@@ -2043,9 +2041,13 @@ int main(int argc, char **argv)
 			void *stack;
 			void *currstk;
 			size_t stksize;
+			int node_cpu = cpu;
+
+			if (node_cpu == -1)
+				node_cpu = cpu_for_thread_ua(i, max_cpus);
 
 			/* find the memory node associated with the cpu i */
-			node = rt_numa_numa_node_of_cpu(cpu);
+			node = rt_numa_numa_node_of_cpu(node_cpu);
 
 			/* get the stack size set for this thread */
 			if (pthread_attr_getstack(&attr, &currstk, &stksize))
@@ -2056,7 +2058,7 @@ int main(int argc, char **argv)
 				stksize = PTHREAD_STACK_MIN * 2;
 
 			/*  allocate memory for a stack on appropriate node */
-			stack = rt_numa_numa_alloc_onnode(stksize, node, cpu);
+			stack = rt_numa_numa_alloc_onnode(stksize, node, node_cpu);
 
 			/* touch the stack pages to pre-fault them in */
 			memset(stack, 0, stksize);
