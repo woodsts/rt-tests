@@ -398,7 +398,7 @@ static void process_options(int argc, char *argv[])
 		if (duration < 0)
 			error = 0;
 
-		if (num_threads < 1 || num_threads > 255)
+		if (num_threads < 1)
 			error = 1;
 
 		if (priority < 0 || priority > 99)
