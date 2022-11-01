@@ -444,6 +444,7 @@ static void process_options(int argc, char *argv[])
 			break;
 		case 'h':
 			print_usage_exit(0);
+			break;
 		case 'l':
 			if (!(argv[optind] && (loops = atoi(optarg)) > 0)) {
 				fprintf(stderr, "%s: --loops|-l requires an integer > 0\n", argv[0]);
