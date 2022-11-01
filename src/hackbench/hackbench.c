@@ -130,14 +130,16 @@ static int inet_socketpair(int fds[2])
 
 	if (bind(s1, &sin, len) < 0)
 		barf("bind");
-	getsockname(s1, &sin, &len);
+	if (getsockname(s1, &sin, &len) < 0)
+		barf("getsockname");
 	if (listen(s1, 10) < 0)
 		barf("listen");
 	if (ioctl(s2, FIONBIO, &ul) < 0)
 		barf("ioctl");
 	if (ioctl(s1, FIONBIO, &ul) < 0)
 		barf("ioctl");
-	connect(s2, &sin, len);
+	if (connect(s2, &sin, len) < 0)
+		barf("connect");
 	if ((fds[0] = accept(s1, &sin, &len)) < 0)
 		barf("accept");
 	ul = 0;
