@@ -200,7 +200,8 @@ static void *sender(struct sender_context *ctx)
 	/* Now pump to every receiver. */
 	for (i = 0; i < loops; i++) {
 		for (j = 0; j < ctx->num_fds; j++) {
-			int ret, done = 0;
+			int ret;
+			size_t done = 0;
 
 again:
 			ret = write(ctx->out_fds[j], data + done, sizeof(data)-done);
@@ -231,7 +232,8 @@ static void *receiver(struct receiver_context* ctx)
 	/* Receive them all */
 	for (i = 0; i < ctx->num_packets; i++) {
 		char data[datasize];
-		int ret, done = 0;
+		int ret;
+		size_t done = 0;
 
 again:
 		ret = read(ctx->in_fds[0], data + done, datasize - done);
@@ -289,7 +291,7 @@ static int create_worker(childinfo_t *child, void *ctx, void *(*func)(void *))
 
 void signal_workers(childinfo_t *children, unsigned int num_children)
 {
-	int i;
+	unsigned int i;
 	printf("signaling %d worker threads to terminate\n", num_children);
 	for (i=0; i < num_children; i++) {
 		kill(children[i].pid, SIGTERM);
@@ -517,7 +519,7 @@ int main(int argc, char *argv[])
 	if (setjmp(jmpbuf) == 0) {
 		total_children = 0;
 		for (i = 0; i < num_groups; i++) {
-			int c = group(child_tab, total_children, num_fds, readyfds[1], wakefds[0]);
+			unsigned int c = group(child_tab, total_children, num_fds, readyfds[1], wakefds[0]);
 			if( c != (num_fds*2) ) {
 				fprintf(stderr, "%i children started.  Expected %i\n", c, num_fds*2);
 				reap_workers(child_tab, total_children + c, 1);
