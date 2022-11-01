@@ -72,8 +72,7 @@ static inline unsigned int rt_numa_bitmask_isbitset( const struct bitmask *mask,
 	return numa_bitmask_isbitset(mask,i);
 }
 
-static inline struct bitmask* rt_numa_parse_cpustring(const char* s,
-	int max_cpus)
+static inline struct bitmask* rt_numa_parse_cpustring(const char* s)
 {
 	return numa_parse_cpustring_all(s);
 }
