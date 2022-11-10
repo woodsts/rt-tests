@@ -454,9 +454,10 @@ if __name__ == '__main__':
 
     if args.window:
         w = microseconds(args.window)
+        width = w//2
         if w < int(detect.get("width")):
-            debug(f"shrinking width to {w//2} for new window of {w}")
-            detect.set("width", w/2)
+            debug(f"shrinking width to {width} for new window of {w}")
+            detect.set("width", width)
         debug(f"window parameter = {w}")
         detect.set("window", w)
         debug(f"window for sampling set to {w}us")
