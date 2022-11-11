@@ -130,7 +130,7 @@ class Detector:
         if not self.debugfs.mount():
             raise RuntimeError("failed to mount debugfs")
         self.samples = []
-        self.testduration = 30  # ten seconds
+        self.testduration = 30  # in seconds
         self.have_msr = False
         self.initsmi = []
         if os.path.exists('/usr/sbin/rdmsr'):
