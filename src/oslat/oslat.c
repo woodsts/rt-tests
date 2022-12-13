@@ -192,6 +192,10 @@ struct global {
 	struct timeval        tv_start;
 	int                   rtprio;
 	int                   bucket_size;
+	bool                  bucket_size_param;
+	int                   bucket_width;
+	int                   unit_per_us;
+	int                   precision;
 	int                   trace_threshold;
 	int                   runtime;
 	/* The core that we run the main thread.  Default is cpu0 */
@@ -325,45 +329,46 @@ static float cycles_to_sec(const struct thread *t, uint64_t cycles)
 
 static void insert_bucket(struct thread *t, stamp_t value)
 {
-	int index, us;
+	int index;
+	unsigned int lat;
 	uint64_t extra;
+	double us;
 
-	index = value / t->counter_mhz;
-	assert(index >= 0);
-	us = index + 1;
-	assert(us > 0);
-
+	lat = (value * g.unit_per_us + t->counter_mhz - 1) / t->counter_mhz;
+	us = (double)lat / g.unit_per_us;
 	if (!g.preheat && g.trace_threshold && us >= g.trace_threshold) {
-		char *line = "%s: Trace threshold (%d us) triggered on cpu %d with %u us!\n"
+		char *line = "%s: Trace threshold (%d us) triggered on cpu %d with %.*f us!\n"
 		    "Stopping the test.\n";
-		tracemark(line, g.app_name, g.trace_threshold, t->core_i, us);
-		err_quit(line, g.app_name, g.trace_threshold, t->core_i, us);
+		tracemark(line, g.app_name, g.trace_threshold, t->core_i,
+			  g.precision, us);
+		err_quit(line, g.app_name, g.trace_threshold, t->core_i,
+			 g.precision, us);
 	}
 
 	/* Update max latency */
-	if (us > t->maxlat)
-		t->maxlat = us;
+	if (lat > t->maxlat)
+		t->maxlat = lat;
 
-	if (us < t->minlat)
-		t->minlat = us;
+	if (lat < t->minlat)
+		t->minlat = lat;
 
 	if (g.bias) {
 		/* t->bias will be set after pre-heat if user enabled it */
-		us -= g.bias;
+		lat -= g.bias;
 		/*
 		 * Negative should hardly happen, but if it happens, we assume we're in
-		 * the smallest bucket, which is 1us.  Same to index.
+		 * the smallest bucket.
 		 */
-		if (us <= 0)
-			us = 1;
-		index -= g.bias;
-		if (index < 0)
-			index = 0;
+		if (lat <= 0)
+			lat = 1;
 	}
+
+	index = lat / g.bucket_width;
+	assert(index >= 0);
 
 	/* Too big the jitter; put into the last bucket */
 	if (index >= g.bucket_size) {
-		/* Keep the extra bit (in us) */
+		/* Keep the extra bit (in bucket width multiples) */
 		extra = index - g.bucket_size;
 		if (t->overflow_sum + extra < t->overflow_sum) {
 			/* The uint64_t even overflowed itself; bail out */
@@ -455,6 +460,19 @@ static void *thread_main(void *arg)
 		printf("%s\n", end);                    \
 	} while (0)
 
+#define putfieldp(label, val, end) do {                        \
+		printf("%12s:\t", label);                      \
+		for (i = 0; i < g.n_threads; ++i)              \
+			printf(" %.*f", g.precision,           \
+			       (double)(val) / g.unit_per_us); \
+		printf("%s\n", end);                           \
+	} while (0)
+
+static double bucket_to_lat(int bucket)
+{
+	return (g.bias + (bucket + 1) * (double)g.bucket_width) / g.unit_per_us;
+}
+
 void calculate(struct thread *t)
 {
 	int i, j;
@@ -465,11 +483,11 @@ void calculate(struct thread *t)
 		/* Calculate average */
 		sum = count = 0;
 		for (j = 0; j < g.bucket_size; j++) {
-			sum += 1.0 * t[i].buckets[j] * (g.bias+j+1);
+			sum += t[i].buckets[j] * bucket_to_lat(j);
 			count += t[i].buckets[j];
 		}
 		/* Add the extra amount of huge spikes in */
-		sum += t->overflow_sum;
+		sum += t->overflow_sum * g.bucket_width;
 		t[i].average = sum / count;
 	}
 }
@@ -501,16 +519,16 @@ static void write_summary(struct thread *t)
 			print_dotdotdot = 0;
 		}
 
-		snprintf(bucket_name, sizeof(bucket_name), "%03"PRIu64
-			 " (us)", g.bias+j+1);
+		snprintf(bucket_name, sizeof(bucket_name), "%03.*f (us)",
+			 g.precision, bucket_to_lat(j));
 		putfield(bucket_name, t[i].buckets[j], PRIu64,
 			 (j == g.bucket_size - 1) ? " (including overflows)" : "");
 	}
 
-	putfield("Minimum", t[i].minlat, PRIu64, " (us)");
+	putfieldp("Minimum", t[i].minlat, " (us)");
 	putfield("Average", t[i].average, ".3lf", " (us)");
-	putfield("Maximum", t[i].maxlat, PRIu64, " (us)");
-	putfield("Max-Min", t[i].maxlat - t[i].minlat, PRIu64, " (us)");
+	putfieldp("Maximum", t[i].maxlat, " (us)");
+	putfieldp("Max-Min", t[i].maxlat - t[i].minlat, " (us)");
 	putfield("Duration", cycles_to_sec(&(t[i]), t[i].runtime),
 		 ".3f", " (sec)");
 	printf("\n");
@@ -537,8 +555,8 @@ static void write_summary_json(FILE *f, void *data)
 			if (t[i].buckets[j] == 0)
 				continue;
 			fprintf(f, "%s", comma ? ",\n" : "\n");
-			fprintf(f, "        \"%" PRIu64 "\": %" PRIu64,
-				g.bias+j+1, t[i].buckets[j]);
+			fprintf(f, "        \"%.*f\": %" PRIu64,
+				g.precision, bucket_to_lat(j), t[i].buckets[j]);
 			comma = 1;
 		}
 		if (comma)
@@ -610,6 +628,10 @@ static void usage(int error)
 	       "-v, --version          Display the version of the software.\n"
 	       "-w, --workload         Specify a kind of workload, default is no workload\n"
 	       "                       (options: no, memmove)\n"
+	       "-W, --bucket-width     Interval between buckets in nanoseconds\n"
+	       "                       NOTE: Widths not a multiple of 1000 cause ns-precision output\n"
+	       "                       You are responsible for considering the impact of measurement\n"
+	       "                       overhead at the nanosecond scale.\n"
 	       "-z, --zero-omit        Don't display buckets in the output histogram if all zeros.\n"
 	       );
 	exit(error);
@@ -630,7 +652,7 @@ static int workload_select(char *name)
 }
 
 enum option_value {
-	OPT_BUCKETSIZE=1, OPT_CPU_LIST, OPT_CPU_MAIN_THREAD,
+	OPT_BUCKETSIZE = 1, OPT_BUCKETWIDTH, OPT_CPU_LIST, OPT_CPU_MAIN_THREAD,
 	OPT_DURATION, OPT_JSON, OPT_RT_PRIO, OPT_HELP, OPT_TRACE_TH,
 	OPT_WORKLOAD, OPT_WORKLOAD_MEM, OPT_BIAS,
 	OPT_QUIET, OPT_SINGLE_PREHEAT, OPT_ZERO_OMIT,
@@ -644,6 +666,7 @@ static void parse_options(int argc, char *argv[])
 		int option_index = 0;
 		static struct option options[] = {
 			{ "bucket-size", required_argument,	NULL, OPT_BUCKETSIZE },
+			{ "bucket-width", required_argument,	NULL, OPT_BUCKETWIDTH },
 			{ "cpu-list",	required_argument,	NULL, OPT_CPU_LIST },
 			{ "cpu-main-thread", required_argument, NULL, OPT_CPU_MAIN_THREAD},
 			{ "duration",	required_argument,	NULL, OPT_DURATION },
@@ -660,7 +683,7 @@ static void parse_options(int argc, char *argv[])
 			{ "version",	no_argument,		NULL, OPT_VERSION },
 			{ NULL, 0, NULL, 0 },
 		};
-		int i, c = getopt_long(argc, argv, "b:Bc:C:D:f:hm:qsw:T:vz",
+		int i, c = getopt_long(argc, argv, "b:Bc:C:D:f:hm:qsw:W:T:vz",
 				       options, &option_index);
 		long ncores;
 
@@ -670,11 +693,26 @@ static void parse_options(int argc, char *argv[])
 		switch (c) {
 		case OPT_BUCKETSIZE:
 		case 'b':
+			g.bucket_size_param = true;
 			g.bucket_size = strtol(optarg, NULL, 10);
 			if (g.bucket_size > 1024 || g.bucket_size <= 4) {
 				printf("Illegal bucket size: %s (should be: 4-1024)\n",
 				       optarg);
 				exit(1);
+			}
+			break;
+		case OPT_BUCKETWIDTH:
+		case 'W':
+			g.bucket_width = strtol(optarg, NULL, 10);
+			if (g.bucket_width <= 0) {
+				printf("Illegal bucket width: %s\n", optarg);
+				exit(1);
+			}
+			if (g.bucket_width % 1000) {
+				g.unit_per_us = 1000;
+				g.precision = 3;
+			} else {
+				g.bucket_width /= 1000;
 			}
 			break;
 		case OPT_BIAS:
@@ -776,6 +814,9 @@ static void parse_options(int argc, char *argv[])
 			break;
 		}
 	}
+
+	if (!g.bucket_size_param && g.precision == 3 && g.bucket_width < 1000)
+		g.bucket_size = BUCKET_SIZE * 1000 / g.bucket_width;
 }
 
 void dump_globals(void)
@@ -811,7 +852,8 @@ static void record_bias(struct thread *t)
 			bias = t[i].minlat;
 	}
 	g.bias = bias;
-	printf("Global bias set to %" PRId64 " (us)\n", bias);
+	printf("Global bias set to %.*f (us)\n", g.precision,
+	       (double)bias / g.unit_per_us);
 }
 
 int main(int argc, char *argv[])
@@ -835,6 +877,8 @@ int main(int argc, char *argv[])
 	g.app_name = argv[0];
 	g.rtprio = 0;
 	g.bucket_size = BUCKET_SIZE;
+	g.bucket_width = 1;
+	g.unit_per_us = 1;
 	g.runtime = 1;
 	g.workload = &workload_list[WORKLOAD_DEFAULT];
 	g.workload_mem_size = WORKLOAD_MEM_SIZE;

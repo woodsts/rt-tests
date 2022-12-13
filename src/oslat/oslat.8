@@ -7,7 +7,7 @@ oslat \- OS Latency Detector
 .RI "[ \-shvz ] [ \-b " bucket-size " ] [ \-B " bias " ] [ \-c " cpu-list " ] \
 [ \-C " cpu-main-thread " ] [ \-f " rt-prio " ] [ \-\-json " filename " ] \
 [ \-m " workload-mem " ] [\-t " runtime " ] [ \-T " trace-threshold " ] \
-[ \-w " workload " ]"
+[ \-w " workload " ] [ \-W " bucket-width " ]"
 .SH DESCRIPTION
 .B oslat
 is an open source userspace polling mode stress program to detect OS level
@@ -56,6 +56,13 @@ Use a single thread when measuring latency at preheat stage
 NOTE: please make sure the CPU frequency on all testing cores
 are locked before using this parmater.  If you don't know how
 to lock the freq then please don't use this parameter.
+.TP
+.B \-W, \-\-bucket-width
+Interval between buckets in nanoseconds
+
+NOTE: Widths not a multiple of 1000 cause ns-precision output
+You are responsible for considering the impact of measurement
+overhead at the nanosecond scale.
 .TP
 .B \-h, \-\-help
 Show the help message.
