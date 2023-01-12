@@ -35,10 +35,19 @@ int numa_initialize(void)
 
 int get_available_cpus(struct bitmask *cpumask)
 {
+	cpu_set_t cpuset;
+	int ret;
+
 	if (cpumask)
 		return numa_bitmask_weight(cpumask);
 
-	return numa_num_task_cpus();
+	CPU_ZERO(&cpuset);
+
+	ret = sched_getaffinity(0, sizeof(cpu_set_t), &cpuset);
+	if (ret < 0)
+		fatal("sched_getaffinity failed: %m\n");
+
+	return CPU_COUNT(&cpuset);
 }
 
 int cpu_for_thread_sp(int thread_num, int max_cpus, struct bitmask *cpumask)
