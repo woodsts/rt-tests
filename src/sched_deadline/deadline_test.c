@@ -931,7 +931,7 @@ static void teardown(void)
  * bind_cpu - Set the affinity of a thread to a specific CPU.
  * @cpu: The CPU to bind to.
  *
- * Sets the current thread to have an affinity of a sigle CPU.
+ * Sets the current thread to have an affinity of a single CPU.
  * Does not work on SCHED_DEADLINE tasks.
  */
 static void bind_cpu(int cpu)
