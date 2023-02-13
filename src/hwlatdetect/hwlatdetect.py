@@ -237,10 +237,11 @@ class Tracer(Detector):
 
     class Sample:
         'private class for tracer sample data'
-        __slots__ = 'timestamp', 'inner', 'outer'
+        __slots__ = 'cpu', 'timestamp', 'inner', 'outer'
 
         def __init__(self, line):
             fields = line.split()
+            self.cpu = int(fields[1][1:-1])
             i, o = fields[6].split('/')
             ts = fields[7][3:]
             self.timestamp = str(ts)
@@ -248,7 +249,7 @@ class Tracer(Detector):
             self.outer = int(o)
 
         def __str__(self):
-            return f"ts: {self.timestamp}, inner:{self.inner}, outer:{self.outer}"
+            return f"ts: {self.timestamp}, inner:{self.inner}, outer:{self.outer}, cpu:{self.cpu}"
 
         def display(self):
             """ convert object to string and print """
