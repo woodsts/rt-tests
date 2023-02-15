@@ -34,7 +34,7 @@ CFLAGS ?= -Wall -Wno-nonnull -Wextra
 CPPFLAGS += -D_GNU_SOURCE -Isrc/include
 LDFLAGS ?=
 
-PYLIB  ?= $(shell python3 -c 'import distutils.sysconfig;  print (distutils.sysconfig.get_python_lib())')
+PYLIB ?= $(shell python3 -m get_pylib)
 
 # Check for errors, such as python3 not available
 ifeq (${PYLIB},)
