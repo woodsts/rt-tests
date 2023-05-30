@@ -22,11 +22,8 @@
 #include <time.h>
 #include <errno.h>
 #include <limits.h>
-#include <linux/unistd.h>
 
-#include <sys/prctl.h>
 #include <sys/stat.h>
-#include <sys/sysinfo.h>
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/resource.h>
