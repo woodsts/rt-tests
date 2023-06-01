@@ -337,8 +337,7 @@ static void insert_bucket(struct thread *t, stamp_t value)
 	lat = (value * g.unit_per_us + t->counter_mhz - 1) / t->counter_mhz;
 	us = (double)lat / g.unit_per_us;
 	if (!g.preheat && g.trace_threshold && us >= g.trace_threshold) {
-		char *line = "%s: Trace threshold (%d us) triggered on cpu %d with %.*f us!\n"
-		    "Stopping the test.\n";
+		char *line = "%s: Trace threshold (%d us) triggered on cpu %d with %.*f us!\n";
 		tracemark(line, g.app_name, g.trace_threshold, t->core_i,
 			  g.precision, us);
 		err_quit(line, g.app_name, g.trace_threshold, t->core_i,
