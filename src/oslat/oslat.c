@@ -220,7 +220,7 @@ struct global {
 
 static struct global g;
 
-static void workload_nop(char *dst, char *src, size_t size)
+static void workload_nop(char *dst __attribute__ ((unused)), char *src __attribute__ ((unused)), size_t size __attribute__ ((unused)))
 {
 	/* Nop */
 }
@@ -474,7 +474,8 @@ static double bucket_to_lat(int bucket)
 
 void calculate(struct thread *t)
 {
-	int i, j;
+	int j;
+	unsigned int i;
 	double sum;
 	uint64_t count;
 
@@ -493,7 +494,8 @@ void calculate(struct thread *t)
 
 static void write_summary(struct thread *t)
 {
-	int i, j, k, print_dotdotdot = 0;
+	int j, print_dotdotdot = 0;
+	unsigned long int i, k;
 	char bucket_name[64];
 
 	calculate(t);
@@ -536,12 +538,13 @@ static void write_summary(struct thread *t)
 static void write_summary_json(FILE *f, void *data)
 {
 	struct thread *t = data;
-	int i, j, comma;
+	int j, comma;
+	unsigned long int i;
 
 	fprintf(f, "  \"num_threads\": %d,\n", g.n_threads);
 	fprintf(f, "  \"thread\": {\n");
 	for (i = 0; i < g.n_threads; ++i) {
-		fprintf(f, "    \"%u\": {\n", i);
+		fprintf(f, "    \"%lu\": {\n", i);
 		fprintf(f, "      \"cpu\": %d,\n", t[i].core_i);
 		fprintf(f, "      \"freq\": %d,\n", t[i].counter_mhz);
 		fprintf(f, "      \"min\": %" PRIu64 ",\n", t[i].minlat);
@@ -568,7 +571,7 @@ static void write_summary_json(FILE *f, void *data)
 
 static void run_expt(struct thread *threads, int runtime_secs, bool preheat)
 {
-	int i;
+	unsigned long int i;
 
 	g.runtime_secs = runtime_secs;
 	g.preheat = preheat;
@@ -593,7 +596,7 @@ static void run_expt(struct thread *threads, int runtime_secs, bool preheat)
 		pthread_join(threads[i].thread_id, NULL);
 }
 
-static void handle_alarm(int code)
+static void handle_alarm(int code __attribute__ ((unused)))
 {
 	g.cmd = STOP;
 }
@@ -839,7 +842,7 @@ void dump_globals(void)
 
 static void record_bias(struct thread *t)
 {
-	int i;
+	unsigned long int i;
 	uint64_t bias = (uint64_t)-1;
 
 	if (!g.enable_bias)
@@ -858,7 +861,8 @@ static void record_bias(struct thread *t)
 int main(int argc, char *argv[])
 {
 	struct thread *threads;
-	int i, n_cores;
+	int n_cores;
+	unsigned long int i;
 	struct bitmask *cpu_set = NULL;
 
 #ifdef FRC_MISSING
