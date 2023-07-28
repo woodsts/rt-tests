@@ -685,7 +685,6 @@ static void usage(int error)
 	       "-a [CPUSET] --affinity     Comma/hyphen separated list of CPUs to run deadline\n"
 	       "                           tasks on. An empty CPUSET runs on all CPUs a deadline\n"
 	       "                           task.\n"
-	       "                           on CPU 4, and thread #5 on CPU 5.\n"
 	       "-D TIME  --duration        Specify a length for the test run.\n"
 	       "                           Append 'm', 'h', or 'd' to specify minutes, hours or\n"
 	       "                           days\n"
@@ -1234,7 +1233,7 @@ int main(int argc, char **argv)
 		percent = nr_cpus * 80 / nr_threads;
 	}
 
-	/* Set up the data while sill in SCHED_FIFO */
+	/* Set up the data while still in SCHED_FIFO */
 	for (i = 0; i < nr_threads; i++) {
 		sd = &sched_data[i];
 		/*
