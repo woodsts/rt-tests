@@ -109,7 +109,7 @@ int mount_debugfs(char *path)
 	/* if it's already mounted just return */
 	prefix = get_debugfileprefix();
 	if (strlen(prefix) != 0) {
-		info("debugfs mountpoint: %s\n", prefix);
+		info(1, "debugfs mountpoint: %s\n", prefix);
 		return 0;
 	}
 	if (!mountpoint)

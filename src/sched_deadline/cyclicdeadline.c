@@ -80,6 +80,8 @@ struct sched_data {
 };
 
 static int shutdown;
+static int info_enable;
+static int debug_enable;
 static int tracelimit;
 static int trace_marker;
 static pthread_mutex_t break_thread_id_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -698,6 +700,8 @@ static void usage(int error)
 	       "-q       --quiet           print a summary only on exit\n"
 	       "-b USEC  --breaktrace=USEC send break trace command when latency > USEC\n"
 	       "         --tracemark       write a trace mark when -b latency is exceeded\n"
+		   "		 --debug		   Print debugging info for cyclicdeadline\n"
+		   "		 --verbose		   Print useful information about the test\n"
 	       );
 	exit(error);
 }
@@ -794,8 +798,8 @@ void *run_deadline(void *data)
 	u64 period;
 	int ret;
 
-	printf("deadline thread %ld\n", tid);
-
+	debug(debug_enable, "deadline thread %ld\n", tid);
+	// set up for each measurment thread
 	stat->tid = tid;
 
 	ret = sched_getattr(0, &attr, sizeof(attr), 0);
@@ -811,7 +815,7 @@ void *run_deadline(void *data)
 	attr.sched_runtime = sd->runtime_us * 1000;
 	attr.sched_deadline = sd->deadline_us * 1000;
 
-	printf("thread[%d] runtime=%lldus deadline=%lldus\n",
+	debug(debug_enable, "thread[%d] runtime=%lldus deadline=%lldus\n",
 	      gettid(), sd->runtime_us, sd->deadline_us);
 
 	ret = sched_setattr(0, &attr, 0);
@@ -1083,7 +1087,7 @@ static void write_stats(FILE *f, void *data)
 enum options_values {
 	OPT_AFFINITY=1, OPT_DURATION, OPT_HELP, OPT_INTERVAL,
 	OPT_JSON, OPT_STEP, OPT_THREADS, OPT_QUIET,
-	OPT_BREAKTRACE, OPT_TRACEMARK,
+	OPT_BREAKTRACE, OPT_TRACEMARK, OPT_INFO, OPT_DEBUG,
 };
 
 int main(int argc, char **argv)
@@ -1124,6 +1128,8 @@ int main(int argc, char **argv)
 			{ "quiet",	no_argument,		NULL,	OPT_QUIET },
 			{ "breaktrace",       required_argument, NULL, OPT_BREAKTRACE },
 			{ "tracemark",	     no_argument,	NULL, OPT_TRACEMARK },
+			{ "verbose",	no_argument,	NULL,	OPT_INFO},
+			{ "debug",	no_argument, 	NULL, 	OPT_DEBUG},
 			{ NULL,		0,			NULL,	0   },
 		};
 		c = getopt_long(argc, argv, "a::c:D:hi:s:t:b:q", options, NULL);
@@ -1175,6 +1181,12 @@ int main(int argc, char **argv)
 			break;
 		case OPT_TRACEMARK:
 			trace_marker = 1;
+			break;
+		case OPT_INFO:
+			info_enable = 1;
+			break;
+		case OPT_DEBUG:
+			debug_enable = 1;
 			break;
 		default:
 			usage(1);
@@ -1250,7 +1262,7 @@ int main(int argc, char **argv)
 		sd->runtime_us = runtime;
 		sd->deadline_us = interval;
 
-		printf("interval: %lld:%lld\n", sd->runtime_us, sd->deadline_us);
+		info(info_enable, "interval: %lld:%lld\n", sd->runtime_us, sd->deadline_us);
 
 		/* Make sure that we can make our deadlines */
 		start_period = get_time_us();
@@ -1260,7 +1272,7 @@ int main(int argc, char **argv)
 			fatal("Failed to perform task within runtime: Missed by %lld us\n",
 			      end_period - start_period - sd->runtime_us);
 
-		printf("  Tested at %lldus of %lldus\n",
+		info(info_enable, "  Tested at %lldus of %lldus\n",
 		       end_period - start_period, sd->runtime_us);
 
 		interval += step;
@@ -1303,7 +1315,7 @@ int main(int argc, char **argv)
 		system("cat /sys/fs/cgroup/cpuset/my_cpuset/tasks");
 	}
 
-	printf("main thread %d\n", gettid());
+	debug(debug_enable, "main thread %d\n", gettid());
 
 	if (shutdown)
 		fatal("failed to setup child threads at step 2");

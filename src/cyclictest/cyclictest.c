@@ -1950,10 +1950,8 @@ int main(int argc, char **argv)
 		for (k=0; k < times; k++)
 			clock_gettime(clock, &time[k]);
 
-		if (ct_debug) {
-			info("For %d consecutive calls to clock_gettime():\n", times);
-			info("time, delta time (nsec)\n");
-		}
+		info(ct_debug, "For %d consecutive calls to clock_gettime():\n", times);
+		info(ct_debug, "time, delta time (nsec)\n");
 
 		prev = time[0];
 		for (k=1; k < times; k++) {
@@ -1964,10 +1962,9 @@ int main(int argc, char **argv)
 			if (diff && (diff < min_non_zero_diff))
 				min_non_zero_diff = diff;
 
-			if (ct_debug)
-				info("%ld.%06ld  %5llu\n",
-				     time[k].tv_sec, time[k].tv_nsec,
-				     (unsigned long long)diff);
+			info(ct_debug, "%ld.%06ld  %5llu\n",
+					time[k].tv_sec, time[k].tv_nsec,
+					(unsigned long long)diff);
 		}
 
 		free(time);

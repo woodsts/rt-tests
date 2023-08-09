@@ -71,9 +71,9 @@
 #define DOWN_ONE "\033[1B"
 
 #define pi_info(fmt, arg...) \
-	do { if (verbose) info(fmt, ## arg); } while (0)
+	do { info(verbose, fmt, ## arg); } while (0)
 #define pi_debug(fmt, arg...) \
-	do { if (debugging) debug(fmt, ## arg); } while (0)
+	do { debug(debugging, fmt, ## arg); } while (0)
 #define pi_error(fmt, arg...) \
 	do { err_msg(fmt, ## arg); have_errors = 1; } while (0)
 
