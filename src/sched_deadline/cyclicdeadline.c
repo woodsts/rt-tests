@@ -807,16 +807,12 @@ void *run_deadline(void *data)
 		return NULL;
 	}
 
-	pthread_barrier_wait(&barrier);
-
 	attr.sched_policy = SCHED_DEADLINE;
 	attr.sched_runtime = sd->runtime_us * 1000;
 	attr.sched_deadline = sd->deadline_us * 1000;
 
 	printf("thread[%d] runtime=%lldus deadline=%lldus\n",
 	      gettid(), sd->runtime_us, sd->deadline_us);
-
-	pthread_barrier_wait(&barrier);
 
 	ret = sched_setattr(0, &attr, 0);
 	if (ret < 0) {
@@ -1280,8 +1276,6 @@ int main(int argc, char **argv)
 
 	atexit(teardown);
 
-	pthread_barrier_wait(&barrier);
-
 	if (shutdown)
 		fatal("failed to setup child threads at step 1\n");
 
@@ -1310,8 +1304,6 @@ int main(int argc, char **argv)
 	}
 
 	printf("main thread %d\n", gettid());
-
-	pthread_barrier_wait(&barrier);
 
 	if (shutdown)
 		fatal("failed to setup child threads at step 2");
