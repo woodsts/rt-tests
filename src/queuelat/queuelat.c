@@ -519,7 +519,7 @@ void main_loop(void)
 	free(src);
 }
 
-void sig_handler(int sig)
+void sig_handler(int sig __attribute__ ((unused)))
 {
 	print_exit_info();
 	exit(0);
