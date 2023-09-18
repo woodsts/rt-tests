@@ -1616,7 +1616,7 @@ static void rstat_print_stat(struct thread_param *par, int index, int verbose, i
  * thread that creates a named fifo and hands out run stats when someone
  * reads from the fifo.
  */
-static void *fifothread(void *param)
+static void *fifothread(void *param __attribute__ ((unused)))
 {
 	int ret;
 	int fd;
@@ -1797,7 +1797,7 @@ rstat_err:
 	return;
 }
 
-static void write_stats(FILE *f, void *data)
+static void write_stats(FILE *f, void *data __attribute__ ((unused)))
 {
 	struct thread_param **par = parameters;
 	unsigned int i, j, comma;
