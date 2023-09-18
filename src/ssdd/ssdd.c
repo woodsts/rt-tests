@@ -64,8 +64,6 @@ static const char *get_state_name(int state)
 	return state_name[state];
 }
 
-#define unused __attribute__((unused))
-
 static int quiet;
 static char jsonfile[MAX_PATH];
 
@@ -154,7 +152,7 @@ static pid_t parent;
 static int nforks = 10;
 static int nsteps = 10000;
 
-static void sigchld(int sig, unused siginfo_t *info, unused void *arg)
+static void sigchld(int sig __attribute__ ((unused)), siginfo_t *info __attribute__ ((unused)), void *arg __attribute__ ((unused)))
 {
 	got_sigchld = 1;
 }
