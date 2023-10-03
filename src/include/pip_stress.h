@@ -32,7 +32,7 @@ void Pthread_mutex_init(pthread_mutex_t *mutex, pthread_mutexattr_t *attr);
 void Pthread_mutex_lock(pthread_mutex_t *mutex);
 void Pthread_mutex_unlock(pthread_mutex_t *mutex);
 
-void init_shared_pthread_mutex(pthread_mutex_t *mutex, int protocol, int policy);
+void init_shared_pthread_mutex(pthread_mutex_t *mutex, int protocol);
 int set_rt_prio(pid_t pid, int prio, int policy);
 int get_rt_prio(pid_t pid);
 

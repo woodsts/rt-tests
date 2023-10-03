@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
 	mptr += sizeof(pthread_mutex_t);	/* advance the memory pointer */
 
 	/* Initialize our mutex via the resource pointer */
-	init_shared_pthread_mutex(resource, PTHREAD_PRIO_INHERIT, policy);
+	init_shared_pthread_mutex(resource, PTHREAD_PRIO_INHERIT);
 
 	statep = (struct State*)mptr;
 	mptr += sizeof(struct State);
@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
 	mptr += sizeof(pthread_mutex_t);	/* advance the memory pointer */
 
 	/* Initialize our State mutex */
-	init_shared_pthread_mutex(statep->mutex, PTHREAD_PRIO_NONE, policy);
+	init_shared_pthread_mutex(statep->mutex, PTHREAD_PRIO_NONE);
 
 	set_rt_prio(0, prio_min, policy);
 
@@ -323,7 +323,7 @@ void Pthread_mutex_unlock(pthread_mutex_t *mutex)
 	}
 }
 
-void init_shared_pthread_mutex(pthread_mutex_t *mutex, int protocol, int policy)
+void init_shared_pthread_mutex(pthread_mutex_t *mutex, int protocol)
 {
 	pthread_mutexattr_t attr;
 
