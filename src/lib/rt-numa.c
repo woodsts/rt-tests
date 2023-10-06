@@ -52,7 +52,7 @@ int get_available_cpus(struct bitmask *cpumask)
 
 int cpu_for_thread_sp(int thread_num, int max_cpus, struct bitmask *cpumask)
 {
-	unsigned int m, cpu, i, num_cpus;
+	int m, cpu, i, num_cpus;
 
 	num_cpus = numa_bitmask_weight(cpumask);
 
