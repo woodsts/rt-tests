@@ -44,7 +44,7 @@ static void setup_ftrace_marker(void)
 		"/debugfs/tracing/trace_marker",
 	};
 	int ret;
-	int i;
+	unsigned int i;
 
 	for (i = 0; i < (sizeof(files) / sizeof(char *)); i++) {
 		ret = stat(files[i], &st);
@@ -354,7 +354,7 @@ static void print_results(void)
 	}
 }
 
-static void write_stats(FILE *f, void *data)
+static void write_stats(FILE *f, void *data __attribute__ ((unused)))
 {
 	int i;
 	int t;
@@ -489,7 +489,7 @@ static int check_times(int l)
 	return 0;
 }
 
-static void stop_log(int sig)
+static void stop_log(int sig __attribute__ ((unused)))
 {
 	stop = 1;
 }
