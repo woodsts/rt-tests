@@ -1800,7 +1800,8 @@ rstat_err:
 static void write_stats(FILE *f, void *data __attribute__ ((unused)))
 {
 	struct thread_param **par = parameters;
-	unsigned int i, j, comma;
+	int i, j;
+	unsigned comma;
 	struct thread_stat *s;
 
 	fprintf(f, "  \"num_threads\": %d,\n", num_threads);
