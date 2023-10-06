@@ -357,7 +357,7 @@ static void process_options(int argc, char *argv[], unsigned int max_cpus)
 	}
 }
 
-static void sighand(int sig)
+static void sighand(int sig __attribute__ ((unused)))
 {
 	shutdown = 1;
 }
@@ -388,7 +388,7 @@ static void write_stats(FILE *f, void *data)
 {
 	struct thread_param *par = data;
 	struct thread_stat *s;
-	unsigned int i;
+	int i;
 
 	fprintf(f, "  \"num_threads\": %d,\n", num_threads);
 	fprintf(f, "  \"thread\": {\n");
