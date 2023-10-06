@@ -321,13 +321,14 @@ static void process_options(int argc, char *argv[])
 
 static int volatile shutdown;
 
-static void sighand(int sig)
+static void sighand(int sig __attribute__ ((unused)))
 {
 	shutdown = 1;
 }
 
-static void print_stat(FILE *fp, struct params *receiver, struct params *sender,
-		       int verbose, int quiet)
+static void print_stat(FILE *fp __attribute__ ((unused)),
+		       struct params *receiver, struct params *sender,
+		       int verbose __attribute__ ((unused)), int quiet)
 {
 	int i;
 
@@ -359,7 +360,7 @@ static void write_stats(FILE *f, void *data)
 {
 	struct params_stats *ps = data;
 	struct params *s, *r;
-	unsigned int i;
+	int i;
 
 	fprintf(f, "  \"num_threads\": %d,\n", num_threads);
 	fprintf(f, "  \"thread\": {\n");
