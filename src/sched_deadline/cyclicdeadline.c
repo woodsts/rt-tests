@@ -1067,7 +1067,7 @@ static void write_stats(FILE *f, void *data)
 {
 	struct sched_data *sd = data;
 	struct thread_stat *s;
-	unsigned int i;
+	int i;
 
 	fprintf(f, "  \"num_threads\": %d,\n", nr_threads);
 	fprintf(f, "  \"resolution_in_ns\": %u,\n", use_nsecs);
