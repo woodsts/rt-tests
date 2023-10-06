@@ -505,7 +505,7 @@ int pending_interrupt(void)
  *   1. report progress
  *   2. check for deadlocks
  */
-void *reporter(void *arg)
+void *reporter(void *arg __attribute__ ((unused)))
 {
 	int status;
 	int end = 0;
@@ -637,7 +637,7 @@ void *low_priority(void *arg)
 		   We can't set the 'loop' boolean here, because some flags
 		   may have already reached the loop_barr
 		 */
-		if (!unbounded && (p->total >= p->inversions)) {
+		if (!unbounded && (p->total >= (unsigned)p->inversions)) {
 			set_shutdown_flag();
 		}
 
@@ -766,7 +766,7 @@ void *med_priority(void *arg)
 
 	pi_debug("med_priority[%d]: starting inversion loop\n", p->id);
 	for (;;) {
-		if (!unbounded && (p->total >= p->inversions)) {
+		if (!unbounded && (p->total >= (unsigned)p->inversions)) {
 			set_shutdown_flag();
 		}
 		/* Either all threads go through the loop_barr, or none do */
@@ -891,7 +891,7 @@ void *high_priority(void *arg)
 	unbounded = (p->inversions < 0);
 	pi_debug("high_priority[%d]: starting inversion loop\n", p->id);
 	for (;;) {
-		if (!unbounded && (p->total >= p->inversions)) {
+		if (!unbounded && (p->total >= (unsigned)p->inversions)) {
 			set_shutdown_flag();
 		}
 
@@ -1449,7 +1449,7 @@ void summary(void)
 	       t->tm_yday, t->tm_hour, t->tm_min, t->tm_sec);
 }
 
-void write_stats(FILE *f, void *data)
+void write_stats(FILE *f, void *data __attribute__ ((unused)))
 {
 	fprintf(f, "  \"inversion\": %lu\n", total_inversions());
 }
