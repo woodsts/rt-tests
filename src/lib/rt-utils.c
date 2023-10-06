@@ -382,12 +382,15 @@ int parse_mem_string(char *str, uint64_t *val)
 	case 'g':
 	case 'G':
 		v *= 1024;
+		__attribute__ ((fallthrough));
 	case 'm':
 	case 'M':
 		v *= 1024;
+		__attribute__ ((fallthrough));
 	case 'k':
 	case 'K':
 		v *= 1024;
+		__attribute__ ((fallthrough));
 	case 'b':
 	case 'B':
 		break;
