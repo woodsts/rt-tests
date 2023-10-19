@@ -251,6 +251,11 @@ help:
 	@echo "    tarball   :  make a rt-tests tarball suitable for release"
 	@echo "    help      :  print this message"
 
+# Universal Ctags warns about the backward compatible option '--extra' and
+# wants it to be called '--extras'.
+CTAGS_BIN = ctags
+CTAGS_EXTRA := $(shell $(CTAGS_BIN) --version 2>&1 | grep -iq universal && echo extras || echo extra)
+
 .PHONY: tags
 tags:
-	ctags -R --extras=+f --c-kinds=+p --exclude=tmp --exclude=BUILD *
+	$(CTAGS_BIN) -R --$(CTAGS_EXTRA)=+f --c-kinds=+p --exclude=tmp --exclude=BUILD *
