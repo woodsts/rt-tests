@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
 VERSION = 2.6
 CC = $(CROSS_COMPILE)gcc
 AR = $(CROSS_COMPILE)ar
