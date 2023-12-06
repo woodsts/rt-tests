@@ -494,7 +494,7 @@ int main(int argc, char *argv[])
 	struct timeval start, stop, diff;
 	int readyfds[2], wakefds[2];
 	char dummy;
-	int timer_started = 0;
+	volatile int timer_started = 0;
 	struct sched_param sp;
 
 	process_options (argc, argv);

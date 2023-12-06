@@ -1181,7 +1181,7 @@ static int read_ctx_switches(int *vol, int *nonvol, int *migrate)
  *  @data->total_time - Total time it took to complete all loops
  *  @data->nr_periods - Number of periods that were executed.
  */
-static u64 do_runtime(long tid, struct sched_data *data, u64 period)
+static u64 do_runtime(struct sched_data *data, u64 period)
 {
 	u64 next_period = period + data->deadline_us;
 	u64 now = get_time_us();
@@ -1354,7 +1354,7 @@ void *run_deadline(void *data)
 	period = get_time_us();
 
 	while (!done) {
-		period = do_runtime(tid, sched_data, period);
+		period = do_runtime(sched_data, period);
 		sched_yield();
 	}
 	ret = sched_getattr(0, &attr, sizeof(attr), 0);
@@ -1714,7 +1714,7 @@ static u64 calculate_loops_per_ms(u64 *overhead)
 	do_sleep(1000);
 
 	start = get_time_us();
-	do_runtime(0, &sd, start + sd.deadline_us);
+	do_runtime(&sd, start + sd.deadline_us);
 	end = get_time_us();
 
 	diff = end - start;
@@ -1743,7 +1743,7 @@ static u64 calculate_loops_per_ms(u64 *overhead)
 	do_sleep(1000);
 
 	start = get_time_us();
-	do_runtime(0, &sd, start + sd.deadline_us);
+	do_runtime(&sd, start + sd.deadline_us);
 	end = get_time_us();
 
 	odiff = end - start;
@@ -1962,7 +1962,7 @@ int main(int argc, char **argv)
 
 		/* Make sure that we can make our deadlines */
 		start_period = get_time_us();
-		do_runtime(gettid(), sd, start_period);
+		do_runtime(sd, start_period);
 		end_period = get_time_us();
 		if (end_period - start_period > sd->runtime_us) {
 			printf("Failed to perform task within runtime: Missed by %lld us\n",

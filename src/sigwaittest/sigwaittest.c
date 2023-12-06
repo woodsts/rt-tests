@@ -375,7 +375,7 @@ static void sighand(int sig __attribute__ ((unused)))
 	mustshutdown = 1;
 }
 
-static void print_stat(FILE *fp, struct params *receiver, struct params *sender,
+static void print_stat(struct params *receiver, struct params *sender,
 		       int verbose __attribute__ ((unused)), int quiet)
 {
 	int i;
@@ -644,7 +644,7 @@ int main(int argc, char *argv[])
 			    sender[i].shutdown;
 
 		if (receiver[0].samples > oldsamples || mustshutdown) {
-			print_stat(stdout, receiver, sender, 0, quiet);
+			print_stat(receiver, sender, 0, quiet);
 			if (!quiet)
 				printf("\033[%dA", num_threads*2);
 		}
@@ -664,7 +664,7 @@ int main(int argc, char *argv[])
 	if (!quiet)
 		printf("\033[%dB", num_threads*2 + 2);
 	else
-		print_stat(stdout, receiver, sender, 0, 0);
+		print_stat(receiver, sender, 0, 0);
 
 	for (i = 0; i < num_threads; i++) {
 		receiver[i].shutdown = 1;
