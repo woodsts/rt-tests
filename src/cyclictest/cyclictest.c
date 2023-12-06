@@ -1407,11 +1407,8 @@ static void print_tids(struct thread_param *par[], int nthreads)
 static void print_hist(struct thread_param *par[], int nthreads)
 {
 	int i, j;
-	unsigned long long int log_entries[nthreads+1];
 	unsigned long maxmax, alloverflows;
 	FILE *fd;
-
-	bzero(log_entries, sizeof(log_entries));
 
 	if (use_histfile) {
 		fd = fopen(histfile, "w");
@@ -1434,21 +1431,12 @@ static void print_hist(struct thread_param *par[], int nthreads)
 			fprintf(fd, "%06lu", curr_latency);
 			if (j < nthreads - 1)
 				fprintf(fd, "\t");
-			log_entries[j] += curr_latency;
 			allthreads += curr_latency;
 		}
-		if (histofall && nthreads > 1) {
+		if (histofall && nthreads > 1)
 			fprintf(fd, "\t%06llu", allthreads);
-			log_entries[nthreads] += allthreads;
-		}
 		fprintf(fd, "\n");
 	}
-	fprintf(fd, "# Total:");
-	for (j = 0; j < nthreads; j++)
-		fprintf(fd, " %09llu", log_entries[j]);
-	if (histofall && nthreads > 1)
-		fprintf(fd, " %09llu", log_entries[nthreads]);
-	fprintf(fd, "\n");
 	fprintf(fd, "# Min Latencies:");
 	for (j = 0; j < nthreads; j++)
 		fprintf(fd, " %05lu", par[j]->stats->min);
