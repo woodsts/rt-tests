@@ -35,6 +35,7 @@
 #include "rt-utils.h"
 #include "rt-numa.h"
 #include "rt-error.h"
+#include "histogram.h"
 
 #include <bionic.h>
 
@@ -133,16 +134,13 @@ struct thread_stat {
 	double avg;
 	long *values;
 	long *smis;
-	long *hist_array;
-	long *outliers;
+	struct histogram *hist;
 	pthread_t thread;
 	int threadstarted;
 	int tid;
 	long reduce;
 	long redmax;
 	long cycleofmax;
-	long hist_overflow;
-	long num_outliers;
 	unsigned long smi_count;
 };
 
@@ -216,6 +214,7 @@ static char jsonfile[MAX_PATH];
 
 static struct thread_param **parameters;
 static struct thread_stat **statistics;
+static struct histoset hset;
 
 static void print_stat(FILE *fp, struct thread_param *par, int index, int verbose, int quiet);
 static void rstat_print_stat(struct thread_param *par, int index, int verbose, int quiet);
@@ -777,15 +776,8 @@ static void *timerthread(void *param)
 		}
 
 		/* Update the histogram */
-		if (histogram) {
-			if (diff >= histogram) {
-				stat->hist_overflow++;
-				if (stat->num_outliers < histogram)
-					stat->outliers[stat->num_outliers++] = stat->cycles;
-			} else {
-				stat->hist_array[diff]++;
-			}
-		}
+		if (histogram)
+			hist_sample(stat->hist, diff);
 
 		stat->cycles++;
 
@@ -1422,19 +1414,13 @@ static void print_hist(struct thread_param *par[], int nthreads)
 
 	fprintf(fd, "# Histogram\n");
 	for (i = 0; i < histogram; i++) {
-		unsigned long long int allthreads = 0;
+		unsigned long flags = 0;
 
 		fprintf(fd, "%06d ", i);
 
-		for (j = 0; j < nthreads; j++) {
-			unsigned long curr_latency=par[j]->stats->hist_array[i];
-			fprintf(fd, "%06lu", curr_latency);
-			if (j < nthreads - 1)
-				fprintf(fd, "\t");
-			allthreads += curr_latency;
-		}
-		if (histofall && nthreads > 1)
-			fprintf(fd, "\t%06llu", allthreads);
+		if (histofall)
+			flags |= HSET_PRINT_SUM;
+		hset_print_bucket(&hset, fd, i, flags);
 		fprintf(fd, "\n");
 	}
 	fprintf(fd, "# Min Latencies:");
@@ -1459,8 +1445,8 @@ static void print_hist(struct thread_param *par[], int nthreads)
 	fprintf(fd, "# Histogram Overflows:");
 	alloverflows = 0;
 	for (j = 0; j < nthreads; j++) {
-		fprintf(fd, " %05lu", par[j]->stats->hist_overflow);
-		alloverflows += par[j]->stats->hist_overflow;
+		fprintf(fd, " %05lu", par[j]->stats->hist->oflow_count);
+		alloverflows += par[j]->stats->hist->oflow_count;
 	}
 	if (histofall && nthreads > 1)
 		fprintf(fd, " %05lu", alloverflows);
@@ -1468,11 +1454,8 @@ static void print_hist(struct thread_param *par[], int nthreads)
 
 	fprintf(fd, "# Histogram Overflow at cycle number:\n");
 	for (i = 0; i < nthreads; i++) {
-		fprintf(fd, "# Thread %d:", i);
-		for (j = 0; j < par[i]->stats->num_outliers; j++)
-			fprintf(fd, " %05lu", par[i]->stats->outliers[j]);
-		if (par[i]->stats->num_outliers < par[i]->stats->hist_overflow)
-			fprintf(fd, " # %05lu others", par[i]->stats->hist_overflow - par[i]->stats->num_outliers);
+		fprintf(fd, "# Thread %d: ", i);
+		hist_print_oflows(par[i]->stats->hist, fd);
 		fprintf(fd, "\n");
 	}
 	if (smi) {
@@ -1788,8 +1771,7 @@ rstat_err:
 static void write_stats(FILE *f, void *data __attribute__ ((unused)))
 {
 	struct thread_param **par = parameters;
-	int i, j;
-	unsigned comma;
+	int i;
 	struct thread_stat *s;
 
 	fprintf(f, "  \"num_threads\": %d,\n", num_threads);
@@ -1800,15 +1782,7 @@ static void write_stats(FILE *f, void *data __attribute__ ((unused)))
 
 		fprintf(f, "      \"histogram\": {");
 		s = par[i]->stats;
-		for (j = 0, comma = 0; j < histogram; j++) {
-			if (s->hist_array[j] == 0)
-				continue;
-			fprintf(f, "%s", comma ? ",\n" : "\n");
-			fprintf(f, "        \"%u\": %ld", j, s->hist_array[j]);
-			comma = 1;
-		}
-		if (comma)
-			fprintf(f, "\n");
+		hist_print_json(par[i]->stats->hist, f);
 		fprintf(f, "      },\n");
 		fprintf(f, "      \"cycles\": %ld,\n", s->cycles);
 		fprintf(f, "      \"min\": %ld,\n", s->min);
@@ -1991,6 +1965,10 @@ int main(int argc, char **argv)
 	/* Set-up shm */
 	rstat_setup();
 
+	if (histogram && hset_init(&hset, num_threads, 1, histogram, histogram))
+		fatal("failed to allocate histogram of size %d for %d threads\n",
+		      histogram, num_threads);
+
 	parameters = calloc(num_threads, sizeof(struct thread_param *));
 	if (!parameters)
 		goto out;
@@ -2066,18 +2044,8 @@ int main(int argc, char **argv)
 			fatal("error allocating thread status struct for thread %d\n", i);
 		memset(stat, 0, sizeof(struct thread_stat));
 
-		/* allocate the histogram if requested */
-		if (histogram) {
-			int bufsize = histogram * sizeof(long);
-
-			stat->hist_array = threadalloc(bufsize, node);
-			stat->outliers = threadalloc(bufsize, node);
-			if (stat->hist_array == NULL || stat->outliers == NULL)
-				fatal("failed to allocate histogram of size %d on node %d\n",
-				      histogram, i);
-			memset(stat->hist_array, 0, bufsize);
-			memset(stat->outliers, 0, bufsize);
-		}
+		if (histogram)
+			stat->hist = &hset.histos[i];
 
 		if (verbose) {
 			int bufsize = VALBUF_SIZE * sizeof(long);
@@ -2215,13 +2183,8 @@ int main(int argc, char **argv)
 	if (trigger)
 		trigger_print();
 
-	if (histogram) {
+	if (histogram)
 		print_hist(parameters, num_threads);
-		for (i = 0; i < num_threads; i++) {
-			threadfree(statistics[i]->hist_array, histogram*sizeof(long), parameters[i]->node);
-			threadfree(statistics[i]->outliers, histogram*sizeof(long), parameters[i]->node);
-		}
-	}
 
 	if (tracelimit) {
 		print_tids(parameters, num_threads);
@@ -2263,5 +2226,6 @@ int main(int argc, char **argv)
 	if (rstat_fd >= 0)
 		shm_unlink(shm_name);
 
+	hset_destroy(&hset);
 	exit(ret);
 }
