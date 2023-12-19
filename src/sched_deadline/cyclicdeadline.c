@@ -33,12 +33,15 @@
 #include "rt-utils.h"
 #include "rt-sched.h"
 #include "rt-error.h"
+#include "histogram.h"
 
 #define _STR(x) #x
 #define STR(x) _STR(x)
 #ifndef MAXPATH
 #define MAXPATH 1024
 #endif
+
+#define HIST_MAX	1000000
 
 #define CPUSET_ALL	"my_cpuset_all"
 #define CPUSET_LOCAL	"my_cpuset"
@@ -56,16 +59,13 @@ struct thread_stat {
 	long act;
 	double avg;
 	long *values;
-	long *hist_array;
-	long *outliers;
+	struct histogram *hist;
 	pthread_t thread;
 	int threadstarted;
 	int tid;
 	long reduce;
 	long redmax;
 	long cycleofmax;
-	long hist_overflow;
-	long num_outliers;
 };
 
 struct sched_data {
@@ -84,6 +84,8 @@ static int info_enable;
 static int debug_enable;
 static int tracelimit;
 static int trace_marker;
+static int histogram;
+static FILE *histfile;
 static pthread_mutex_t break_thread_id_lock = PTHREAD_MUTEX_INITIALIZER;
 static pid_t break_thread_id;
 static uint64_t break_thread_value;
@@ -96,6 +98,8 @@ static int use_nsecs;
 static int mark_fd;
 static int quiet;
 static char jsonfile[MAX_PATH];
+
+static struct histoset hset;
 
 static int find_mount(const char *mount, char *debugfs)
 {
@@ -691,6 +695,10 @@ static void usage(int error)
 	       "                           Append 'm', 'h', or 'd' to specify minutes, hours or\n"
 	       "                           days\n"
 	       "-h       --help            Show this help menu.\n"
+	       "         --histogram=US    dump a latency histogram to stdout after the run\n"
+	       "                           US is the max latency time to be tracked in microseconds\n"
+	       "			   This option runs all threads at the same priority.\n"
+	       "	 --histfile=<path> dump the latency histogram to <path> instead of stdout\n"
 	       "-i INTV  --interval        The shortest deadline for the tasks in us\n"
 	       "                           (default 1000us).\n"
 	       "         --json=FILENAME   write final results into FILENAME, JSON formatted\n"
@@ -716,6 +724,55 @@ static u64 get_time_us(void)
 	time += ts.tv_nsec / 1000;
 
 	return time;
+}
+
+static void print_hist(FILE *fp, struct sched_data *sd, int nthreads)
+{
+	int i;
+	unsigned long maxmax, alloverflows;
+
+	fprintf(fp, "# Histogram\n");
+	for (i = 0; i < histogram; i++) {
+		unsigned long flags = 0;
+
+		fprintf(fp, "%06d ", i);
+
+		hset_print_bucket(&hset, fp, i, flags);
+		fprintf(fp, "\n");
+	}
+	fprintf(fp, "# Min Latencies:");
+	for (i = 0; i < nthreads; i++)
+		fprintf(fp, " %05lu", sd[i].stat.min);
+	fprintf(fp, "\n");
+	fprintf(fp, "# Avg Latencies:");
+	for (i = 0; i < nthreads; i++)
+		fprintf(fp, " %05lu", sd[i].stat.cycles ?
+		       (long)(sd[i].stat.avg/sd[i].stat.cycles) : 0);
+	fprintf(fp, "\n");
+	fprintf(fp, "# Max Latencies:");
+	maxmax = 0;
+	for (i = 0; i < nthreads; i++) {
+		fprintf(fp, " %05lu", sd[i].stat.max);
+		if (sd[i].stat.max > maxmax)
+			maxmax = sd[i].stat.max;
+	}
+	fprintf(fp, "\n");
+	fprintf(fp, "# Histogram Overflows:");
+	alloverflows = 0;
+	for (i = 0; i < nthreads; i++) {
+		fprintf(fp, " %05lu", sd[i].stat.hist->oflow_count);
+		alloverflows += sd[i].stat.hist->oflow_count;
+	}
+	fprintf(fp, "\n");
+
+	fprintf(fp, "# Histogram Overflow at cycle number:\n");
+	for (i = 0; i < nthreads; i++) {
+		fprintf(fp, "# Thread %d: ", i);
+		hist_print_oflows(sd[i].stat.hist, fp);
+		fprintf(fp, "\n");
+	}
+
+	fprintf(fp, "\n");
 }
 
 static void print_stat(FILE *fp, struct sched_data *sd, int index, int verbose, int quiet)
@@ -783,6 +840,9 @@ static u64 do_runtime(struct sched_data *sd, u64 period)
 		stat->min = diff;
 	stat->act = diff;
 	stat->avg += (double) diff;
+
+	if (histogram)
+		hist_sample(stat->hist, diff);
 
 	stat->cycles++;
 
@@ -1058,8 +1118,14 @@ static void loop(struct sched_data *sched_data, int nr_threads)
 	if (!quiet) {
 		printf("\033[%dB", nr_threads + 2);
 	} else {
-		for (i = 0; i < nr_threads; ++i)
-			print_stat(stdout, &sched_data[i], i, 0, 0);
+		if (histogram) {
+			FILE *out = histfile ? histfile : stdout;
+
+			print_hist(out, sched_data, nr_threads);
+		} else {
+			for (i = 0; i < nr_threads; ++i)
+				print_stat(stdout, &sched_data[i], i, 0, 0);
+		}
 	}
 }
 
@@ -1075,10 +1141,14 @@ static void write_stats(FILE *f, void *data)
 	for (i = 0; i < nr_threads; i++) {
 		s = &sd[i].stat;
 		fprintf(f, "    \"%u\": {\n", i);
-		fprintf(f, "	 \"cycles\": %ld,\n", s->cycles);
-		fprintf(f, "	 \"min\": %ld,\n", s->min);
-		fprintf(f, "	 \"max\": %ld,\n", s->max);
-		fprintf(f, "	 \"avg\": %.2f\n", s->avg/s->cycles);
+
+		fprintf(f, "      \"histogram\": {");
+		hist_print_json(s->hist, f);
+		fprintf(f, "      },\n");
+		fprintf(f, "      \"cycles\": %ld,\n", s->cycles);
+		fprintf(f, "      \"min\": %ld,\n", s->min);
+		fprintf(f, "      \"max\": %ld,\n", s->max);
+		fprintf(f, "      \"avg\": %.2f\n", s->avg/s->cycles);
 		fprintf(f, "    }%s\n", i == nr_threads - 1 ? "" : ",");
 	}
 	fprintf(f, "  }\n");
@@ -1088,6 +1158,7 @@ enum options_values {
 	OPT_AFFINITY=1, OPT_DURATION, OPT_HELP, OPT_INTERVAL,
 	OPT_JSON, OPT_STEP, OPT_THREADS, OPT_QUIET,
 	OPT_BREAKTRACE, OPT_TRACEMARK, OPT_INFO, OPT_DEBUG,
+	OPT_HISTOGRAM, OPT_HISTFILE
 };
 
 int main(int argc, char **argv)
@@ -1130,6 +1201,8 @@ int main(int argc, char **argv)
 			{ "tracemark",	     no_argument,	NULL, OPT_TRACEMARK },
 			{ "verbose",	no_argument,	NULL,	OPT_INFO},
 			{ "debug",	no_argument, 	NULL, 	OPT_DEBUG},
+			{ "histogram",	required_argument, NULL, OPT_HISTOGRAM },
+			{ "histfile",	required_argument, NULL, OPT_HISTFILE },
 			{ NULL,		0,			NULL,	0   },
 		};
 		c = getopt_long(argc, argv, "a::c:D:hi:s:t:b:q", options, NULL);
@@ -1188,6 +1261,17 @@ int main(int argc, char **argv)
 		case OPT_DEBUG:
 			debug_enable = 1;
 			break;
+		case OPT_HISTOGRAM:
+			histogram = atoi(optarg);
+			if (histogram <= 0 || histogram > HIST_MAX)
+				usage(1);
+			break;
+		case OPT_HISTFILE:
+			histfile = fopen(optarg, "w");
+			if (!histfile)
+				fatal("Couldn\'t open histfile %s: %s\n",
+				      optarg, strerror(errno));
+			break;
 		default:
 			usage(1);
 		}
@@ -1233,6 +1317,10 @@ int main(int argc, char **argv)
 	if (!thread || !sched_data)
 		fatal("allocating threads");
 
+	if (histogram && hset_init(&hset, nr_threads, 1, histogram, histogram))
+		fatal("failed to allocate histogram of size %d for %d threads\n",
+		      histogram, nr_threads);
+
 	if (nr_threads > nr_cpus) {
 		/*
 		 * More threads than CPUs, then have the total be
@@ -1261,6 +1349,9 @@ int main(int argc, char **argv)
 		}
 		sd->runtime_us = runtime;
 		sd->deadline_us = interval;
+
+		if (histogram)
+			sd->stat.hist = &hset.histos[i];
 
 		info(info_enable, "interval: %lld:%lld\n", sd->runtime_us, sd->deadline_us);
 
@@ -1356,6 +1447,9 @@ int main(int argc, char **argv)
 		free(setcpu_buf);
 	free(thread);
 	free(sched_data);
+	if (histfile)
+		fclose(histfile);
+	hset_destroy(&hset);
 
 	return 0;
 }
