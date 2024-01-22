@@ -53,7 +53,6 @@ typedef int s32;
 /* Struct for statistics */
 struct thread_stat {
 	unsigned long cycles;
-	unsigned long cyclesread;
 	long min;
 	long max;
 	long act;
@@ -64,8 +63,6 @@ struct thread_stat {
 	int threadstarted;
 	int tid;
 	long reduce;
-	long redmax;
-	long cycleofmax;
 };
 
 struct sched_data {
@@ -775,36 +772,23 @@ static void print_hist(FILE *fp, struct sched_data *sd, int nthreads)
 	fprintf(fp, "\n");
 }
 
-static void print_stat(FILE *fp, struct sched_data *sd, int index, int verbose, int quiet)
+static void print_stat(FILE *fp, struct sched_data *sd, int index, int quiet)
 {
 	struct thread_stat *stat = &sd->stat;
+	char *fmt;
 
-	if (!verbose) {
-		if (quiet != 1) {
-			char *fmt;
-			if (use_nsecs)
-				fmt = "T:%2d (%5d) I:%ld C:%7lu "
-					"Min:%7ld Act:%8ld Avg:%8ld Max:%8ld\n";
-			else
-				fmt = "T:%2d (%5d) I:%ld C:%7lu "
-					"Min:%7ld Act:%5ld Avg:%5ld Max:%8ld\n";
-			fprintf(fp, fmt, index, stat->tid,
-				sd->deadline_us, stat->cycles, stat->min, stat->act,
-				stat->cycles ?
-				(long)(stat->avg/stat->cycles) : 0, stat->max);
-		}
-	} else {
-		while (stat->cycles != stat->cyclesread) {
-			long diff = stat->values
-			    [stat->cyclesread & sd->bufmsk];
+	if (quiet)
+		return;
 
-			if (diff > stat->redmax) {
-				stat->redmax = diff;
-				stat->cycleofmax = stat->cyclesread;
-			}
-			stat->cyclesread++;
-		}
-	}
+	if (use_nsecs)
+		fmt = "T:%2d (%5d) I:%ld C:%7lu Min:%7ld Act:%8ld Avg:%8ld Max:%8ld\n";
+	else
+		fmt = "T:%2d (%5d) I:%ld C:%7lu Min:%7ld Act:%5ld Avg:%5ld Max:%8ld\n";
+
+	fprintf(fp, fmt, index, stat->tid,
+		sd->deadline_us, stat->cycles, stat->min, stat->act,
+		stat->cycles ?
+		(long)(stat->avg/stat->cycles) : 0, stat->max);
 }
 
 static u64 do_runtime(struct sched_data *sd, u64 period)
@@ -1109,7 +1093,7 @@ static void loop(struct sched_data *sched_data, int nr_threads)
 
 	while (!shutdown) {
 		for (i = 0; i < nr_threads; i++)
-			print_stat(stdout, &sched_data[i], i, 0, quiet);
+			print_stat(stdout, &sched_data[i], i, quiet);
 		usleep(10000);
 		if (!quiet)
 			printf("\033[%dA", nr_threads);
@@ -1119,7 +1103,7 @@ static void loop(struct sched_data *sched_data, int nr_threads)
 		printf("\033[%dB", nr_threads + 2);
 	} else if (!histogram) {
 		for (i = 0; i < nr_threads; ++i)
-			print_stat(stdout, &sched_data[i], i, 0, 0);
+			print_stat(stdout, &sched_data[i], i, 0);
 	}
 
 	if (histogram) {
