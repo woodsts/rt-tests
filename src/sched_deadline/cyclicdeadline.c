@@ -1141,10 +1141,11 @@ static void write_stats(FILE *f, void *data)
 	for (i = 0; i < nr_threads; i++) {
 		s = &sd[i].stat;
 		fprintf(f, "    \"%u\": {\n", i);
-
-		fprintf(f, "      \"histogram\": {");
-		hist_print_json(s->hist, f);
-		fprintf(f, "      },\n");
+		if (s->hist) {
+			fprintf(f, "      \"histogram\": {");
+			hist_print_json(s->hist, f);
+			fprintf(f, "      },\n");
+		}
 		fprintf(f, "      \"cycles\": %ld,\n", s->cycles);
 		fprintf(f, "      \"min\": %ld,\n", s->min);
 		fprintf(f, "      \"max\": %ld,\n", s->max);

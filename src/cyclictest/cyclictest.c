@@ -1778,12 +1778,13 @@ static void write_stats(FILE *f, void *data __attribute__ ((unused)))
 	fprintf(f, "  \"resolution_in_ns\": %u,\n", use_nsecs);
 	fprintf(f, "  \"thread\": {\n");
 	for (i = 0; i < num_threads; i++) {
-		fprintf(f, "    \"%u\": {\n", i);
-
-		fprintf(f, "      \"histogram\": {");
 		s = par[i]->stats;
-		hist_print_json(par[i]->stats->hist, f);
-		fprintf(f, "      },\n");
+		fprintf(f, "    \"%u\": {\n", i);
+		if (s->hist) {
+			fprintf(f, "      \"histogram\": {");
+			hist_print_json(s->hist, f);
+			fprintf(f, "      },\n");
+		}
 		fprintf(f, "      \"cycles\": %ld,\n", s->cycles);
 		fprintf(f, "      \"min\": %ld,\n", s->min);
 		fprintf(f, "      \"max\": %ld,\n", s->max);
