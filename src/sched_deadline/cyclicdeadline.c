@@ -1117,15 +1117,15 @@ static void loop(struct sched_data *sched_data, int nr_threads)
 	usleep(10000);
 	if (!quiet) {
 		printf("\033[%dB", nr_threads + 2);
-	} else {
-		if (histogram) {
-			FILE *out = histfile ? histfile : stdout;
+	} else if (!histogram) {
+		for (i = 0; i < nr_threads; ++i)
+			print_stat(stdout, &sched_data[i], i, 0, 0);
+	}
 
-			print_hist(out, sched_data, nr_threads);
-		} else {
-			for (i = 0; i < nr_threads; ++i)
-				print_stat(stdout, &sched_data[i], i, 0, 0);
-		}
+	if (histogram) {
+		FILE *out = histfile ? histfile : stdout;
+
+		print_hist(out, sched_data, nr_threads);
 	}
 }
 
