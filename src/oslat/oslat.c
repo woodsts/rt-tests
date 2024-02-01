@@ -501,7 +501,7 @@ static void write_summary(struct thread *t)
 	calculate(t);
 
 	putfield("Core", t[i].core_i, "d", "");
-	putfield("Counter Freq", t[i].counter_mhz, "u", " (Mhz)");
+	putfield("Counter Freq", t[i].counter_mhz, "u", " (MHz)");
 
 	for (j = 0; j < g.bucket_size; j++) {
 		if (j < g.bucket_size-1 && g.output_omit_zero_buckets) {
