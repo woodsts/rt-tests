@@ -404,7 +404,14 @@ static int get_smi_counter(int fd, unsigned long *counter)
 
 #include <cpuid.h>
 
-/* Based on turbostat's check */
+/* Guess if the CPU has an SMI counter in the model-specific registers (MSR).
+ *
+ * This is true for Intel x86 CPUs after Nehalem (2008). However, it's not
+ * possible to detect the feature directly, (or at least, turbostat.c doesn't
+ * know how to do it either) so we assume it's true for all x86 CPUs.
+ * Previously, this function had an explicit allowlist, which required updates
+ * every time a new CPU generation was released.
+ */
 static int has_smi_counter(void)
 {
 	unsigned int ebx, ecx, edx, max_level;
@@ -427,88 +434,6 @@ static int has_smi_counter(void)
 	/* no MSR */
 	if (!(edx & (1 << 5)))
 		return 0;
-
-	model = (((fms >> 16) & 0xf) << 4) + ((fms >> 4) & 0xf);
-
-	/* Based on intel_model_duplicates */
-	switch (model) {
-	case 0x1A:      /* INTEL_FAM6_NEHALEM_EP */
-	case 0x1E:      /* INTEL_FAM6_NEHALEM */
-	case 0x1F:      /* Core i7 and i5 Processor - Nehalem */
-	case 0x25:      /* INTEL_FAM6_WESTMERE */
-	case 0x2C:      /* INTEL_FAM6_WESTMERE_EP */
-		model = 0x1E;      /* INTEL_FAM6_NEHALEM */
-		break;
-	case 0x2E:      /* INTEL_FAM6_NEHALEM_EX */
-	case 0x2F:      /* INTEL_FAM6_WESTMERE_EX */
-		model = 0x2E;      /* INTEL_FAM6_NEHALEM_EX */
-		break;
-	case 0x85:      /* INTEL_FAM6_XEON_PHI_KNM */
-		model = 0x57;      /* INTEL_FAM6_XEON_PHI_KNL */
-		break;
-	case 0x4F:      /* INTEL_FAM6_BROADWELL_X */
-	case 0x56:      /* INTEL_FAM6_BROADWELL_D */
-		model = 0x4F;      /* INTEL_FAM6_BROADWELL_X */
-		break;
-	case 0x4E:      /* INTEL_FAM6_SKYLAKE_L */
-	case 0x5E:      /* INTEL_FAM6_SKYLAKE */
-	case 0x8E:      /* INTEL_FAM6_KABYLAKE_L */
-	case 0x9E:      /* INTEL_FAM6_KABYLAKE */
-	case 0xA6:      /* INTEL_FAM6_COMETLAKE_L */
-	case 0xA5:      /* INTEL_FAM6_COMETLAKE */
-		model = 0x4E;      /* INTEL_FAM6_SKYLAKE_L */
-		break;
-	case 0x7E:      /* INTEL_FAM6_ICELAKE_L */
-	case 0x9D:      /* INTEL_FAM6_ICELAKE_NNPI */
-	case 0x8C:      /* INTEL_FAM6_TIGERLAKE_L */
-	case 0x8D:      /* INTEL_FAM6_TIGERLAKE */
-	case 0xA7:      /* INTEL_FAM6_ROCKETLAKE */
-	case 0x8A:      /* INTEL_FAM6_LAKEFIELD */
-	case 0x97:      /* INTEL_FAM6_ALDERLAKE */
-	case 0x9A:      /* INTEL_FAM6_ALDERLAKE_L */
-		model = 0x66;      /* INTEL_FAM6_CANNONLAKE_L */
-		break;
-	case 0x9C:      /* INTEL_FAM6_ATOM_TREMONT_L */
-		model = 0x96;      /* INTEL_FAM6_ATOM_TREMONT */
-		break;
-	case 0x6C:      /* INTEL_FAM6_ICELAKE_D */
-	case 0x8F:      /* INTEL_FAM6_SAPPHIRERAPIDS_X */
-		model = 0x6A;      /* INTEL_FAM6_ICELAKE_X */
-		break;
-	}
-
-	/* Based on probe_nhm_msrs */
-	switch (model) {
-	case 0x1E:      /* INTEL_FAM6_NEHALEM */
-	case 0x2E:      /* INTEL_FAM6_NEHALEM_EX */
-	case 0x2A:      /* INTEL_FAM6_SANDYBRIDGE */
-	case 0x2D:      /* INTEL_FAM6_SANDYBRIDGE_X */
-	case 0x3A:      /* INTEL_FAM6_IVYBRIDGE */
-	case 0x3E:      /* INTEL_FAM6_IVYBRIDGE_X */
-	case 0x3C:      /* INTEL_FAM6_HASWELL */
-	case 0x46:      /* INTEL_FAM6_HASWELL_G */
-	case 0x3F:      /* INTEL_FAM6_HASWELL_X */
-	case 0x45:      /* INTEL_FAM6_HASWELL_L */
-	case 0x3D:      /* INTEL_FAM6_BROADWELL */
-	case 0x47:      /* INTEL_FAM6_BROADWELL_G */
-	case 0x4F:      /* INTEL_FAM6_BROADWELL_X */
-	case 0x4E:      /* INTEL_FAM6_SKYLAKE_L */
-	case 0x66:      /* INTEL_FAM6_CANNONLAKE_L */
-	case 0x55:      /* INTEL_FAM6_SKYLAKE_X */
-	case 0x6A:      /* INTEL_FAM6_ICELAKE_X */
-	case 0x37:      /* INTEL_FAM6_ATOM_SILVERMONT */
-	case 0x4D:      /* INTEL_FAM6_ATOM_SILVERMONT_D */
-	case 0x4C:      /* INTEL_FAM6_ATOM_AIRMONT */
-	case 0x57:      /* INTEL_FAM6_XEON_PHI_KNL */
-	case 0x5C:      /* INTEL_FAM6_ATOM_GOLDMONT */
-	case 0x7A:      /* INTEL_FAM6_ATOM_GOLDMONT_PLUS */
-	case 0x5F:      /* INTEL_FAM6_ATOM_GOLDMONT_D */
-	case 0x96:      /* INTEL_FAM6_ATOM_TREMONT */
-	case 0x86:      /* INTEL_FAM6_ATOM_TREMONT_D */
-		break;
-	default:
-		return 0;
-	}
 
 	return 1;
 }
