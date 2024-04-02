@@ -405,8 +405,6 @@ static unsigned int group(childinfo_t *child,
 static void process_options(int argc, char *argv[])
 {
 	for(;;) {
-		int optind = 0;
-
 		static struct option longopts[] = {
 			{"fds",		required_argument,	NULL, 'f'},
 			{"fifo",	no_argument,		NULL, 'F'},
@@ -422,13 +420,13 @@ static void process_options(int argc, char *argv[])
 		};
 
 		int c = getopt_long(argc, argv, "f:Fg:hl:pis:TP",
-				    longopts, &optind);
+				    longopts, NULL);
 		if (c == -1) {
 			break;
 		}
 		switch (c) {
 		case 'f':
-			if (!(argv[optind] && (num_fds = atoi(optarg)) > 0)) {
+			if ((num_fds = atoi(optarg)) <= 0) {
 				fprintf(stderr, "%s: --fds|-f requires an integer > 0\n", argv[0]);
 				print_usage_exit(1);
 			}
@@ -437,7 +435,7 @@ static void process_options(int argc, char *argv[])
 			fifo = 1;
 			break;
 		case 'g':
-			if (!(argv[optind] && (num_groups = atoi(optarg)) > 0)) {
+			if ((num_groups = atoi(optarg)) <= 0) {
 				fprintf(stderr, "%s: --groups|-g requires an integer > 0\n", argv[0]);
 				print_usage_exit(1);
 			}
@@ -446,7 +444,7 @@ static void process_options(int argc, char *argv[])
 			print_usage_exit(0);
 			break;
 		case 'l':
-			if (!(argv[optind] && (loops = atoi(optarg)) > 0)) {
+			if ((loops = atoi(optarg)) <= 0) {
 				fprintf(stderr, "%s: --loops|-l requires an integer > 0\n", argv[0]);
 				print_usage_exit(1);
 			}
