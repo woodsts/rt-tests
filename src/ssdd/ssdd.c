@@ -80,7 +80,7 @@ static void usage(int error)
 	       "-h       --help            print this message\n"
 	       "         --json=FILENAME   write final results into FILENAME, JSON formatted\n"
 	       "-q       --quiet           suppress running output\n"
-	       "-i       --iters=NUM       number of iterations\n"
+	       "-i       --iters=NUM       number of iterations, NUM must be at least 1\n"
 	       );
 	exit(error);
 }
@@ -331,6 +331,9 @@ int main(int argc, char **argv)
 		case 'i':
 		case OPT_NITERS:
 			nsteps = atoi(optarg);
+			if (nsteps < 1) {
+				usage(0);
+			}
 			break;
 		default:
 			usage(1);
