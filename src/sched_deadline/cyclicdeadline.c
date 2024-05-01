@@ -731,11 +731,10 @@ static void print_hist(FILE *fp, struct sched_data *sd, int nthreads)
 	fprintf(fp, "# Histogram\n");
 	for (i = 0; i < histogram; i++) {
 		unsigned long flags = 0;
+		char buf[64];
 
-		fprintf(fp, "%06d ", i);
-
-		hset_print_bucket(&hset, fp, i, flags);
-		fprintf(fp, "\n");
+		snprintf(buf, sizeof(buf), "%06d ", i);
+		hset_print_bucket(&hset, fp, buf, i, flags);
 	}
 	fprintf(fp, "# Min Latencies:");
 	for (i = 0; i < nthreads; i++)

@@ -1340,13 +1340,13 @@ static void print_hist(struct thread_param *par[], int nthreads)
 	fprintf(fd, "# Histogram\n");
 	for (i = 0; i < histogram; i++) {
 		unsigned long flags = 0;
+		char buf[64];
 
-		fprintf(fd, "%06d ", i);
+		snprintf(buf, sizeof(buf), "%06d ", i);
 
 		if (histofall)
 			flags |= HSET_PRINT_SUM;
-		hset_print_bucket(&hset, fd, i, flags);
-		fprintf(fd, "\n");
+		hset_print_bucket(&hset, fd, buf, i, flags);
 	}
 	fprintf(fd, "# Min Latencies:");
 	for (j = 0; j < nthreads; j++)

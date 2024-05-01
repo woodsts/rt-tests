@@ -114,8 +114,8 @@ void hset_destroy(struct histoset *hs)
 	hs->histos = NULL;
 }
 
-void hset_print_bucket(struct histoset *hs, FILE *f, unsigned long bucket,
-		       unsigned long flags)
+void hset_print_bucket(struct histoset *hs, FILE *f, const char *pre,
+		       unsigned long bucket, unsigned long flags)
 {
 	unsigned long long sum = 0;
 	unsigned long i;
@@ -123,10 +123,17 @@ void hset_print_bucket(struct histoset *hs, FILE *f, unsigned long bucket,
 	if (bucket >= hs->num_buckets)
 		return;
 
+	for (i = 0; i < hs->num_histos; i++)
+		sum += hs->histos[i].buckets[bucket];
+
+	if (sum == 0)
+		return;
+	if (pre)
+		fprintf(f, "%s", pre);
+
 	for (i = 0; i < hs->num_histos; i++) {
 		unsigned long val = hs->histos[i].buckets[bucket];
 
-		sum += val;
 		if (i != 0)
 			fprintf(f, "\t");
 		fprintf(f, "%06lu", val);
@@ -134,6 +141,8 @@ void hset_print_bucket(struct histoset *hs, FILE *f, unsigned long bucket,
 
 	if (flags & HSET_PRINT_SUM)
 		fprintf(f, "\t%06llu", sum);
+
+	fprintf(f, "\n");
 }
 
 void hist_print_json(struct histogram *h, FILE *f)

@@ -36,7 +36,7 @@ int hist_sample(struct histogram *h, uint64_t sample);
 int hset_init(struct histoset *hs, unsigned long histos, unsigned long bucket_width,
 	      unsigned long num_buckets, unsigned long overflow);
 void hset_destroy(struct histoset *hs);
-void hset_print_bucket(struct histoset *hs, FILE *f, unsigned long bucket,
-		       unsigned long flags);
+void hset_print_bucket(struct histoset *hs, FILE *f, const char *pre,
+		       unsigned long bucket, unsigned long flags);
 void hist_print_json(struct histogram *h, FILE *f);
 void hist_print_oflows(struct histogram *h, FILE *f);
