@@ -426,7 +426,8 @@ static void process_options(int argc, char *argv[])
 		}
 		switch (c) {
 		case 'f':
-			if ((num_fds = atoi(optarg)) <= 0) {
+			num_fds = atoi(optarg);
+			if (atoi(optarg) <= 0) {
 				fprintf(stderr, "%s: --fds|-f requires an integer > 0\n", argv[0]);
 				print_usage_exit(1);
 			}
@@ -435,7 +436,8 @@ static void process_options(int argc, char *argv[])
 			fifo = 1;
 			break;
 		case 'g':
-			if ((num_groups = atoi(optarg)) <= 0) {
+			num_groups = atoi(optarg);
+			if (atoi(optarg) <= 0) {
 				fprintf(stderr, "%s: --groups|-g requires an integer > 0\n", argv[0]);
 				print_usage_exit(1);
 			}
@@ -444,7 +446,8 @@ static void process_options(int argc, char *argv[])
 			print_usage_exit(0);
 			break;
 		case 'l':
-			if ((loops = atoi(optarg)) <= 0) {
+			loops = atoi(optarg);
+			if (atoi(optarg) <= 0) {
 				fprintf(stderr, "%s: --loops|-l requires an integer > 0\n", argv[0]);
 				print_usage_exit(1);
 			}
@@ -456,7 +459,8 @@ static void process_options(int argc, char *argv[])
 			use_inet = 1;
 			break;
 		case 's':
-			if ((datasize = atoi(optarg)) <= 0) {
+			datasize = atoi(optarg);
+			if (atoi(optarg) <= 0) {
 				fprintf(stderr, "%s: --datasize|-s requires an integer > 0\n", argv[0]);
 				print_usage_exit(1);
 			}
