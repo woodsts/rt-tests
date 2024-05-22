@@ -456,7 +456,7 @@ static void process_options(int argc, char *argv[])
 			use_inet = 1;
 			break;
 		case 's':
-			if (!(argv[optind] && (datasize = atoi(optarg)) > 0)) {
+			if ((datasize = atoi(optarg)) <= 0) {
 				fprintf(stderr, "%s: --datasize|-s requires an integer > 0\n", argv[0]);
 				print_usage_exit(1);
 			}
