@@ -552,8 +552,8 @@ void *reporter(void *arg __attribute__ ((unused)))
 				printf("Current Inversions: %lu\n",
 						total_inversions());
 			}
+			pthread_mutex_unlock(&shutdown_mtx);
 		}
-		pthread_mutex_unlock(&shutdown_mtx);
 
 		/* if we specified a duration, see if it has expired */
 		if (end && time(NULL) > end) {
