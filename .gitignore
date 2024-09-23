@@ -47,5 +47,6 @@ rt-tests.spec
 tags
 TAGS
 cscope.*
+compile_commands.json
 src/cyclictest/__pycache__/
 __pycache__/
