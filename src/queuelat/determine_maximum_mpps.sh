@@ -42,7 +42,15 @@ usage()
 
 get_cpuinfo_mhz()
 {
-	grep "cpu MHz" /proc/cpuinfo | cut -f 3 -d " " | sort -rn | head -n1
+	# Try to determine MHz from /proc/cpuinfo
+	FREQ_MHZ=$(grep "cpu MHz" /proc/cpuinfo | cut -f 3 -d " " | sort -rn | head -n1)
+
+	# Try to determine MHz from /sys/firmware/devicetree/base/cpus/timebase-frequency
+	if [ -z $FREQ_MHZ ]; then
+		FREQ_MHZ=$(($((16#$(hexdump -e '1/1 "%02X"' /sys/firmware/devicetree/base/cpus/timebase-frequency)))/1000000))
+	fi
+
+	echo "$FREQ_MHZ"
 }
 
 # Check that the scheduling policy hasn't already been set
