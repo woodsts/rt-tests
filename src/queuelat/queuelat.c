@@ -292,7 +292,8 @@ static inline unsigned long long __clock_gettime(void)
 	if (ret < 0)
 		return 0;
 
-	return now.tv_nsec;
+	// Combine seconds and nanoseconds into a single value in nanoseconds
+	return (unsigned long long)now.tv_sec * 1000000000ULL + now.tv_nsec;
 }
 
 #define gettick(val) do { (val) = __clock_gettime(); } while (0)
