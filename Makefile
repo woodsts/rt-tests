@@ -1,4 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
+include feature/test-feature.mak
+
 VERSION = 2.7
 CC = $(CROSS_COMPILE)gcc
 AR = $(CROSS_COMPILE)ar
@@ -36,6 +38,19 @@ CPPFLAGS += -D_GNU_SOURCE -Isrc/include
 LDFLAGS ?=
 
 PYLIB ?= $(shell python3 -m get_pylib)
+
+# Check for optional libcpupower dependency
+ifneq ($(no_libcpupower), 1)
+ifeq ($(call test-feature,libcpupower), 0)
+CPPFLAGS += -DHAVE_LIBCPUPOWER_SUPPORT
+LDFLAGS += -lcpupower
+else
+$(warning libcpupower is missing, building without --deepest-idle-state support.)
+$(warning Please install libcpupower-dev/kernel-tools-libs-devel)
+endif
+else
+$(warning libcpupower disabled, building without --deepest-idle-state support.)
+endif
 
 # Check for errors, such as python3 not available
 ifeq (${PYLIB},)
