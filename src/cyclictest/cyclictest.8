@@ -60,6 +60,9 @@ select clock
 .br
 1 = CLOCK_REALTIME
 .TP
+.B \-\-deepest\-idle\-state=n
+Reduce exit from idle latency by limiting idle state up to n on used cpus (-1 disables all idle states). Power management is not suppresed on other cpus.
+.TP
 .B \-\-default\-system
 Don't attempt to tune the system from cyclictest. Power management is not suppressed. This might give poorer results, but will allow you to discover if you need to tune the system.
 .TP
