@@ -4,78 +4,31 @@
  * Copyright (C) 2006, 2007 Clark Williams <williams@redhat.com>
  */
 
-/* This program stress tests pthreads priority inheritance mutexes
+/*
+ * This program stress tests pthreads priority inheritance mutexes
 
-   The logic is built upon the state machine that performs the "classic_pi"
-   deadlock scenario. A state machine or "inversion group" is a group of three
-   threads as described below.
+ * The logic is built upon the state machine that performs the "classic_pi"
+ * deadlock scenario. A state machine or "inversion group" is a group of three
+ * threads as described below.
+ *
+ * The basic premise here is to set up a deadlock scenario and confirm that PI
+ * mutexes resolve the situation. Three worker threads will be created from the
+ * main thread: low, medium and high priority threads that use SCHED_FIFO as
+ * their scheduling policy. The low priority thread claims a mutex and then
+ * starts "working". The medium priority thread starts and preempts the low
+ * priority thread. Then the high priority thread runs and attempts to claim
+ * the mutex owned by the low priority thread. Without priority inheritance,
+ * this will deadlock the program. With priority inheritance, the low priority
+ * thread receives a priority boost, finishes it's "work" and releases the mutex
+ * which allows the high priority thread to run and finish and then the medium
+ * priority thread finishes.
+ *
+ * That's the theory, anyway...
+ *
+ * CW - 2006
+ */
 
-   The basic premise here is to set up a deadlock scenario and confirm that PI
-   mutexes resolve the situation. Three worker threads will be created from the
-   main thread: low, medium and high priority threads that use SCHED_FIFO as
-   their scheduling policy. The low priority thread claims a mutex and then
-   starts "working". The medium priority thread starts and preempts the low
-   priority thread. Then the high priority thread runs and attempts to claim
-   the mutex owned by the low priority thread. Without priority inheritance,
-   this will deadlock the program. With priority inheritance, the low priority
-   thread receives a priority boost, finishes it's "work" and releases the mutex,
-   which allows the high priority thread to run and finish and then the medium
-   priority thread finishes.
-
-   That's the theory, anyway...
-
-   CW - 2006  */
-
-#include <stdio.h>
-#include <errno.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <pthread.h>
-#include <sched.h>
-#include <unistd.h>
-#include <string.h>
-#include <signal.h>
-#include <getopt.h>
-#include <sys/types.h>
-#include <sys/mman.h>
-#include <sys/wait.h>
-#include <sys/syscall.h>
-#include <termios.h>
-#include <stdint.h>
-#include <inttypes.h>
-#include <limits.h>
-
-#include "rt-sched.h"
-#include "rt-utils.h"
-#include "rt-error.h"
-
-/* test timeout */
-#define TIMEOUT 2
-
-/* determine if the C library supports Priority Inheritance mutexes */
-#if defined(_POSIX_THREAD_PRIO_INHERIT) && _POSIX_THREAD_PRIO_INHERIT != -1
-#define HAVE_PI_MUTEX 1
-#else
-#define HAVE_PI_MUTEX 0
-#endif
-
-#if HAVE_PI_MUTEX == 0
-#error "Can't run this test without PI Mutex support"
-#endif
-
-#define SUCCESS 0
-#define FAILURE 1
-
-/* cursor control */
-#define UP_ONE "\033[1A"
-#define DOWN_ONE "\033[1B"
-
-#define pi_info(fmt, arg...) \
-	do { info(verbose, fmt, ## arg); } while (0)
-#define pi_debug(fmt, arg...) \
-	do { debug(debugging, fmt, ## arg); } while (0)
-#define pi_error(fmt, arg...) \
-	do { err_msg(fmt, ## arg); have_errors = 1; } while (0)
+#include "pi_stress.h"
 
 /* the length of the test */
 /* default is infinite */
@@ -85,46 +38,44 @@ int duration = -1;
 time_t start, finish;
 
 /* the number of groups to create */
-int ngroups = 0;
+int ngroups;
 
 /* the number of times a group causes a priority inversion situation */
 /* default to infinite */
 int inversions = -1;
 
 /* turn on lots of prints */
-int verbose = 0;
+int verbose;
 
 /* turn on pi_debugging prints */
-int debugging = 0;
+int debugging;
 
-int quiet = 0;	/* turn off all prints, default = 0 (off) */
+/* turn off all prints, default = 0 (off) */
+int quiet;
 
 /* filename for JSON output */
 char jsonfile[MAX_PATH];
 
 /* prompt to start test */
-int prompt = 0;
+int prompt;
 
 /* report interval */
 unsigned long report_interval = (unsigned long)SEC_TO_USEC(0.75);
 
-int shutdown = 0;		/* global indicating we should shut down */
+int shutdown;			/* global indicating we should shut down */
 pthread_mutex_t shutdown_mtx;	/* associated mutex */
 
 /* indicate if errors have occurred */
-int have_errors = 0;
+int have_errors;
 
 /* indicated that keyboard interrupt has happened */
-int interrupted = 0;
+int interrupted;
 
 /* force running on one cpu */
-int uniprocessor = 0;
+int uniprocessor;
 
 /* lock all memory */
-int lockall = 0;
-
-#define NUM_TEST_THREADS 3
-#define NUM_ADMIN_THREADS 1
+int lockall;
 
 pthread_barrier_t all_threads_ready;
 pthread_barrier_t all_threads_done;
@@ -139,85 +90,12 @@ struct sched_attr med_sa;
 struct sched_attr high_sa;
 struct sched_attr admin_sa;
 
-#define SA_INIT_LOW	(1 << 0)
-#define SA_INIT_MED	(1 << 1)
-#define SA_INIT_HIGH	(1 << 2)
-#define SA_INIT_ADMIN	(1 << 3)
-
 unsigned int sa_initialized;
 
-struct group_parameters {
-
-	/* group id (index) */
-	int id;
-
-	/* cpu this group is bound to */
-	long cpu;
-
-	/* threads in the group */
-	pthread_t low_tid;
-	pthread_t med_tid;
-	pthread_t high_tid;
-
-	/* number of machine iterations to perform */
-	int inversions;
-
-	/* group mutex */
-	pthread_mutex_t mutex;
-
-	/* state barriers */
-	pthread_barrier_t start_barrier;
-	pthread_barrier_t locked_barrier;
-	pthread_barrier_t elevate_barrier;
-	pthread_barrier_t finish_barrier;
-
-	/* Either everyone goes through the loop, or else no-ones does */
-	pthread_barrier_t loop_barr;
-	pthread_mutex_t loop_mtx;	/* Protect access to int loop */
-	int loop;	/* boolean, loop or not, connected to shutdown */
-
-	/* state variables */
-	volatile int watchdog;
-
-	/* total number of inversions performed */
-	unsigned long total;
-
-	/* total watchdog hits */
-	int watchdog_hits;
-
-} *groups;
-
-/* number of consecutive watchdog hits before quitting */
-#define WATCHDOG_LIMIT 5
+struct group_parameters *groups;
 
 /* number of online processors */
-long num_processors = 0;
-
-/* forward prototypes */
-void *low_priority(void *arg);
-void *med_priority(void *arg);
-void *high_priority(void *arg);
-void *reporter(void *arg);
-void *watchdog(void *arg);
-int setup_thread_attr(pthread_attr_t * attr, struct sched_attr * sa,
-		      cpu_set_t * mask);
-int set_cpu_affinity(cpu_set_t * test_mask, cpu_set_t * admin_mask);
-void process_command_line(int argc, char **argv);
-void usage(int error);
-int block_signals(void);
-int allow_sigterm(void);
-void set_shutdown_flag(void);
-int initialize_group(struct group_parameters *group);
-int create_group(struct group_parameters *group);
-unsigned long total_inversions(void);
-void banner(void);
-void summary(void);
-void write_stats(FILE *f, void *data);
-void wait_for_termination(void);
-int barrier_init(pthread_barrier_t *b, const pthread_barrierattr_t *attr,
-		 unsigned int count, const char *name);
-void setup_sched_attr(struct sched_attr *attr, int policy, int prio);
-void setup_sched_config(int policy);
+long num_processors;
 
 int main(int argc, char **argv)
 {
@@ -256,7 +134,8 @@ int main(int argc, char **argv)
 	status = pthread_setschedparam(pthread_self(), admin_sa.sched_policy,
 				       &thread_param);
 	if (status) {
-		pi_error("main: boosting to max priority: 0x%x\n", status);
+		pi_error("%s: boosting to max priority: 0x%x\n", __func__,
+			 status);
 		return FAILURE;
 	}
 	/* block unwanted signals */
@@ -265,7 +144,8 @@ int main(int argc, char **argv)
 	/* allocate our groups array */
 	groups = calloc(ngroups, sizeof(struct group_parameters));
 	if (groups == NULL) {
-		pi_error("main: failed to allocate %d groups\n", ngroups);
+		pi_error("%s: failed to allocate %d groups\n", __func__,
+			 ngroups);
 		return FAILURE;
 	}
 	/* set up CPU affinity masks */
@@ -310,8 +190,8 @@ int main(int argc, char **argv)
 	pi_info("Releasing all threads\n");
 	status = pthread_barrier_wait(&all_threads_ready);
 	if (status && status != PTHREAD_BARRIER_SERIAL_THREAD) {
-		pi_error("main: pthread_barrier_wait(all_threads_ready): 0x%x\n",
-		      status);
+		pi_error("%s: pthread_barrier_wait(all_threads_ready): 0x%x\n",
+			 __func__, status);
 		set_shutdown_flag();
 		return FAILURE;
 	}
@@ -329,9 +209,7 @@ int main(int argc, char **argv)
 		pi_info("waiting for all threads to complete\n");
 		status = pthread_barrier_wait(&all_threads_done);
 		if (status && status != PTHREAD_BARRIER_SERIAL_THREAD) {
-			pi_error
-			    ("main: pthread_barrier_wait(all_threads_ready): 0x%x\n",
-			     status);
+			pi_error("%s: pthread_barrier_wait(all_threads_ready): 0x%x\n", __func__, status);
 			return FAILURE;
 		}
 		pi_info("All threads terminated!\n");
@@ -350,8 +228,8 @@ int main(int argc, char **argv)
 }
 
 int
-setup_thread_attr(pthread_attr_t * attr, struct sched_attr * sa,
-		  cpu_set_t * mask)
+setup_thread_attr(pthread_attr_t *attr, struct sched_attr *sa,
+		  cpu_set_t *mask)
 {
 	int status;
 	struct sched_param thread_param;
@@ -359,26 +237,28 @@ setup_thread_attr(pthread_attr_t * attr, struct sched_attr * sa,
 	status = pthread_attr_init(attr);
 	if (status) {
 		pi_error
-		    ("setup_thread_attr: initializing thread attribute: 0x%x\n",
+		    ("%s: initializing thread attribute: 0x%x\n", __func__,
 		     status);
 		return FAILURE;
 	}
 	status = pthread_attr_setaffinity_np(attr, sizeof(cpu_set_t), mask);
 	if (status) {
-		pi_error("setup_thread_attr: setting affinity attribute: 0x%x\n",
-		      status);
+		pi_error("%s: setting affinity attribute: 0x%x\n", __func__,
+			 status);
 		return FAILURE;
 	}
 
-	/* The pthread API does not yet support SCHED_DEADLINE, defer the
-	 * thread configuration to setup_thread() */
+	/*
+	 * The pthread API does not yet support SCHED_DEADLINE, defer the
+	 * thread configuration to setup_thread()
+	 */
 	if (sa->sched_policy == SCHED_DEADLINE)
 		return SUCCESS;
 
 	status = pthread_attr_setschedpolicy(attr, sa->sched_policy);
 	if (status) {
 		pi_error
-		    ("setup_thread_attr: setting attribute policy to %s: 0x%x\n",
+		    ("%s: setting attribute policy to %s: 0x%x\n", __func__,
 		     policy_to_string(sa->sched_policy),
 		     status);
 		return FAILURE;
@@ -386,21 +266,21 @@ setup_thread_attr(pthread_attr_t * attr, struct sched_attr * sa,
 	status = pthread_attr_setinheritsched(attr, PTHREAD_EXPLICIT_SCHED);
 	if (status) {
 		pi_error
-		    ("setup_thread_attr: setting explicit scheduling inheritance: 0x%x\n",
-		     status);
+		    ("%s: setting explicit scheduling inheritance: 0x%x\n",
+		     __func__, status);
 		return FAILURE;
 	}
 	thread_param.sched_priority = sa->sched_priority;
 	status = pthread_attr_setschedparam(attr, &thread_param);
 	if (status) {
-		pi_error("setup_thread_attr: setting scheduler param: 0x%x\n",
-		      status);
+		pi_error("%s: setting scheduler param: 0x%x\n", __func__,
+			 status);
 		return FAILURE;
 	}
 	return SUCCESS;
 }
 
-int set_cpu_affinity(cpu_set_t * test_mask, cpu_set_t * admin_mask)
+int set_cpu_affinity(cpu_set_t *test_mask, cpu_set_t *admin_mask)
 {
 	int status, i, admin_proc;
 	cpu_set_t current_mask;
@@ -414,8 +294,10 @@ int set_cpu_affinity(cpu_set_t * test_mask, cpu_set_t * admin_mask)
 		pi_info("admin and test threads running on one processor\n");
 		return SUCCESS;
 	}
-	/* first set our main thread to run on the first
-	   scheduleable processor we can find */
+	/*
+	 * first set our main thread to run on the first
+	 * scheduleable processor we can find
+	 */
 	status = sched_getaffinity(0, sizeof(cpu_set_t), &current_mask);
 	if (status) {
 		pi_error("failed getting CPU affinity mask: 0x%x\n", status);
@@ -434,7 +316,7 @@ int set_cpu_affinity(cpu_set_t * test_mask, cpu_set_t * admin_mask)
 	CPU_SET(admin_proc, admin_mask);
 	status = sched_setaffinity(0, sizeof(cpu_set_t), admin_mask);
 	if (status) {
-		pi_error("set_cpu_affinity: setting CPU affinity mask: 0x%x\n",
+		pi_error("%s: setting CPU affinity mask: 0x%x\n", __func__,
 		      status);
 		return FAILURE;
 	}
@@ -459,6 +341,7 @@ int set_cpu_affinity(cpu_set_t * test_mask, cpu_set_t * admin_mask)
 void watchdog_clear(void)
 {
 	int i;
+
 	for (i = 0; i < ngroups; i++)
 		groups[i].watchdog = 0;
 }
@@ -526,8 +409,8 @@ void *reporter(void *arg __attribute__ ((unused)))
 		return NULL;
 	}
 
-	pi_debug("reporter: starting report loop\n");
-	pi_info("Press Control-C to stop test\nCurrent Inversions: \n");
+	pi_debug("%s: starting report loop\n", __func__);
+	pi_info("Press Control-C to stop test\nCurrent Inversions:\n");
 
 	for (;;) {
 		pthread_mutex_lock(&shutdown_mtx);
@@ -568,7 +451,7 @@ void *reporter(void *arg __attribute__ ((unused)))
 		}
 		/* check watchdog stuff */
 		if ((watchdog_check())) {
-			pi_error("reporter stopping due to watchdog event\n");
+			pi_error("%s stopping due to watchdog event\n", __func__);
 			set_shutdown_flag();
 			break;
 		}
@@ -576,7 +459,7 @@ void *reporter(void *arg __attribute__ ((unused)))
 		watchdog_clear();
 
 	}
-	pi_debug("reporter: finished\n");
+	pi_debug("%s: finished\n", __func__);
 	set_shutdown_flag();
 	return NULL;
 }
@@ -634,12 +517,11 @@ void *low_priority(void *arg)
 
 	for (;;) {
 		/*
-		   We can't set the 'loop' boolean here, because some flags
-		   may have already reached the loop_barr
+		 * We can't set the 'loop' boolean here, because some flags
+		 * may have already reached the loop_barr
 		 */
-		if (!unbounded && (p->total >= (unsigned)p->inversions)) {
+		if (!unbounded && (p->total >= (unsigned int)p->inversions))
 			set_shutdown_flag();
-		}
 
 		/* Either all threads go through the loop_barr, or none do */
 		pthread_mutex_lock(loop_mtx);
@@ -766,9 +648,9 @@ void *med_priority(void *arg)
 
 	pi_debug("med_priority[%d]: starting inversion loop\n", p->id);
 	for (;;) {
-		if (!unbounded && (p->total >= (unsigned)p->inversions)) {
+		if (!unbounded && (p->total >= (unsigned int)p->inversions))
 			set_shutdown_flag();
-		}
+
 		/* Either all threads go through the loop_barr, or none do */
 		pthread_mutex_lock(loop_mtx);
 		if (*loop == 0) {
@@ -891,7 +773,7 @@ void *high_priority(void *arg)
 	unbounded = (p->inversions < 0);
 	pi_debug("high_priority[%d]: starting inversion loop\n", p->id);
 	for (;;) {
-		if (!unbounded && (p->total >= (unsigned)p->inversions)) {
+		if (!unbounded && (p->total >= (unsigned int)p->inversions)) {
 			set_shutdown_flag();
 		}
 
@@ -1115,19 +997,22 @@ int initialize_group(struct group_parameters *group)
 			 "loop_barrier"))
 		return FAILURE;
 
-	if ((status = pthread_mutex_init(&group->loop_mtx, NULL)) != 0) {
+	status = pthread_mutex_init(&group->loop_mtx, NULL);
+	if (status) {
 		pi_error("pthread_mutex_init, status = %d\n", status);
 		return FAILURE;
 	}
 
-	if ((status = pthread_mutex_lock(&group->loop_mtx)) != 0) {
+	status = pthread_mutex_lock(&group->loop_mtx);
+	if (status) {
 		pi_error("pthread_mutex_lock, status = %d\n", status);
 		return FAILURE;
 	}
 
 	group->loop = 1;
 
-	if ((status = pthread_mutex_unlock(&group->loop_mtx)) != 0) {
+	status = pthread_mutex_unlock(&group->loop_mtx);
+	if (status) {
 		pi_error("pthread_mutex_unlock, status = %d\n", status);
 		return FAILURE;
 	}
@@ -1261,8 +1146,10 @@ int process_sched_line(const char *arg)
 	if (!id)
 		return FAILURE;
 
-	/* We do not validate the options, instead we pass all garbage
-	 * to the kernel and see what's happening */
+	/*
+	 * We do not validate the options, instead we pass all garbage
+	 * to the kernel and see what's happening
+	 */
 
 	if (!strcmp(id, "low")) {
 		memcpy(&low_sa, &sa, sizeof(struct sched_attr));
@@ -1323,9 +1210,7 @@ void process_command_line(int argc, char **argv)
 		case 'g':
 			ngroups = strtol(optarg, NULL, 10);
 			if (ngroups > num_processors) {
-					pi_error("the number of groups cannot exceed "
-					 "the number of online processors (%ld)\n",
-					 num_processors);
+				pi_error("the number of groups cannot exceed the number of online processors (%ld)\n", num_processors);
 				exit(-1);
 			}
 			pi_info("number of groups set to %d\n", ngroups);
@@ -1395,12 +1280,12 @@ unsigned long total_inversions(void)
 	return total;
 }
 
-void print_sched_attr(const char *name, struct sched_attr * sa)
+void print_sched_attr(const char *name, struct sched_attr *sa)
 {
 	printf("    %6s thread", name);
 	printf(" %s", policy_to_string(sa->sched_policy));
 
-	switch(sa->sched_policy) {
+	switch (sa->sched_policy) {
 	case SCHED_OTHER:
 		printf(" nice %d\n", sa->sched_nice);
 		break;
@@ -1460,7 +1345,8 @@ barrier_init(pthread_barrier_t *b, const pthread_barrierattr_t *attr,
 {
 	int status;
 
-	if ((status = pthread_barrier_init(b, attr, count)) != 0) {
+	status = pthread_barrier_init(b, attr, count);
+	if (status != 0) {
 		pi_error("barrier_init: failed to initialize: %s\n", name);
 		pi_error("status = %d\n", status);
 		return FAILURE;
