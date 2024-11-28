@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 include feature/test-feature.mak
 
-VERSION = 2.7
+VERSION = 2.8
 CC = $(CROSS_COMPILE)gcc
 AR = $(CROSS_COMPILE)ar
 
