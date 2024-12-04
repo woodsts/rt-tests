@@ -43,7 +43,7 @@ PYLIB ?= $(shell python3 -m get_pylib)
 ifneq ($(no_libcpupower), 1)
 ifeq ($(call test-feature,libcpupower), 0)
 CPPFLAGS += -DHAVE_LIBCPUPOWER_SUPPORT
-LDFLAGS += -lcpupower
+LIBCPUPOWER += -lcpupower
 else
 $(warning libcpupower is missing, building without --deepest-idle-state support.)
 $(warning Please install libcpupower-dev/kernel-tools-libs-devel)
@@ -135,7 +135,7 @@ $(OBJDIR):
 -include $(addprefix $(OBJDIR)/,$(sources:.c=.d))
 
 cyclictest: $(OBJDIR)/cyclictest.o $(OBJDIR)/librttest.a $(OBJDIR)/librttestnuma.a
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $< $(LIBS) $(RTTESTLIB) $(RTTESTNUMA)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $< $(LIBS) $(RTTESTLIB) $(RTTESTNUMA) $(LIBCPUPOWER)
 
 cyclicdeadline: $(OBJDIR)/cyclicdeadline.o $(OBJDIR)/librttest.a
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $< $(LIBS) $(RTTESTLIB)
