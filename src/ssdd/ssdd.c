@@ -152,7 +152,7 @@ static pid_t parent;
 static int nforks = 10;
 static int nsteps = 10000;
 
-static void sigchld(int sig __attribute__ ((unused)), siginfo_t *info __attribute__ ((unused)), void *arg __attribute__ ((unused)))
+static void sigchld(int sig, siginfo_t *info, void *arg)
 {
 	got_sigchld = 1;
 }

@@ -416,7 +416,7 @@ static void process_options(int argc, char *argv[])
 
 static int volatile mustshutdown;
 
-static void sighand(int sig __attribute__ ((unused)))
+static void sighand(int sig)
 {
 	mustshutdown = 1;
 }
@@ -456,7 +456,8 @@ static void write_stats(FILE *f, void *data)
 	fprintf(f, "  }\n");
 }
 
-static void print_stat(FILE *fp __attribute__ ((unused)), struct params *receiver, struct params *sender, int verbose __attribute__ ((unused)), int quiet)
+static void print_stat(FILE *fp, struct params *receiver, struct params *sender,
+		       int verbose, int quiet)
 {
 	int i;
 

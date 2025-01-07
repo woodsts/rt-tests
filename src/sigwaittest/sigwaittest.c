@@ -370,13 +370,13 @@ static void process_options(int argc, char *argv[])
 
 static int volatile mustshutdown;
 
-static void sighand(int sig __attribute__ ((unused)))
+static void sighand(int sig)
 {
 	mustshutdown = 1;
 }
 
 static void print_stat(struct params *receiver, struct params *sender,
-		       int verbose __attribute__ ((unused)), int quiet)
+		       int verbose, int quiet)
 {
 	int i;
 

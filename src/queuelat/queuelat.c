@@ -520,7 +520,7 @@ void main_loop(void)
 	free(src);
 }
 
-void sig_handler(int sig __attribute__ ((unused)))
+void sig_handler(int sig)
 {
 	print_exit_info();
 	exit(0);

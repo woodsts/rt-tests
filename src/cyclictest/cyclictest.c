@@ -436,11 +436,10 @@ static int set_deepest_cpu_idle_state(unsigned int cpu, unsigned int deepest_sta
 
 static inline int have_libcpupower_support(void) { return 1; }
 #else
-static inline int save_cpu_idle_disable_state(__attribute__((unused)) unsigned int cpu) { return -1; }
-static inline int restore_cpu_idle_disable_state(__attribute__((unused)) unsigned int cpu) { return -1; }
+static inline int save_cpu_idle_disable_state(unsigned int cpu) { return -1; }
+static inline int restore_cpu_idle_disable_state(unsigned int cpu) { return -1; }
 static inline void free_cpu_idle_disable_states(void) { }
-static inline int set_deepest_cpu_idle_state(__attribute__((unused)) unsigned int cpu,
-											 __attribute__((unused)) unsigned int state) { return -1; }
+static inline int set_deepest_cpu_idle_state(unsigned int cpu, unsigned int state) { return -1; }
 static inline int have_libcpupower_support(void) { return 0; }
 #endif /* HAVE_LIBCPUPOWER_SUPPORT */
 
@@ -1687,7 +1686,7 @@ static void rstat_print_stat(struct thread_param *par, int index, int verbose, i
  * thread that creates a named fifo and hands out run stats when someone
  * reads from the fifo.
  */
-static void *fifothread(void *param __attribute__ ((unused)))
+static void *fifothread(void *param)
 {
 	int ret;
 	int fd;
@@ -1868,7 +1867,7 @@ rstat_err:
 	return;
 }
 
-static void write_stats(FILE *f, void *data __attribute__ ((unused)))
+static void write_stats(FILE *f, void *data)
 {
 	struct thread_param **par = parameters;
 	int i;

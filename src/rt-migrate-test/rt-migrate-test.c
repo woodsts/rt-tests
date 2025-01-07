@@ -354,7 +354,7 @@ static void print_results(void)
 	}
 }
 
-static void write_stats(FILE *f, void *data __attribute__ ((unused)))
+static void write_stats(FILE *f, void *data)
 {
 	int i;
 	int t;
@@ -489,7 +489,7 @@ static int check_times(int l)
 	return 0;
 }
 
-static void stop_log(int sig __attribute__ ((unused)))
+static void stop_log(int sig)
 {
 	stop = 1;
 }

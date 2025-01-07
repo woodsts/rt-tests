@@ -220,7 +220,7 @@ struct global {
 
 static struct global g;
 
-static void workload_nop(char *dst __attribute__ ((unused)), char *src __attribute__ ((unused)), size_t size __attribute__ ((unused)))
+static void workload_nop(char *dst, char *src, size_t size)
 {
 	/* Nop */
 }
@@ -596,7 +596,7 @@ static void run_expt(struct thread *threads, int runtime_secs, bool preheat)
 		pthread_join(threads[i].thread_id, NULL);
 }
 
-static void handle_alarm(int code __attribute__ ((unused)))
+static void handle_alarm(int code)
 {
 	g.cmd = STOP;
 }

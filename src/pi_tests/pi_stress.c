@@ -388,7 +388,7 @@ int pending_interrupt(void)
  *   1. report progress
  *   2. check for deadlocks
  */
-void *reporter(void *arg __attribute__ ((unused)))
+void *reporter(void *arg)
 {
 	int status;
 	int end = 0;
@@ -1334,7 +1334,7 @@ void summary(void)
 	       t->tm_yday, t->tm_hour, t->tm_min, t->tm_sec);
 }
 
-void write_stats(FILE *f, void *data __attribute__ ((unused)))
+void write_stats(FILE *f, void *data)
 {
 	fprintf(f, "  \"inversion\": %lu\n", total_inversions());
 }
