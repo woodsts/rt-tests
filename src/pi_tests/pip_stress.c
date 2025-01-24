@@ -72,7 +72,9 @@ static void usage(int error)
 	printf("pip_stress V %1.2f\n", VERSION);
 	printf("Usage:\n"
 	       "pip_stress <options>\n"\
-	       "-h	--help                  Show this help menu.\n"
+	       "-h       --help          Show this help menu.\n"\
+	       "-u TIME  --usleep=TIME   Specify the sleep time in usec of the low priority process.\n"\
+	       "                         Defaults to 500.\n"
 	       );
 	exit(error);
 }
@@ -88,15 +90,19 @@ int main(int argc, char *argv[])
 	for (;;) {
 		struct option long_options[] = {
 			{ "help",	no_argument,		NULL,	'h' },
+			{ "usleep",	required_argument,	NULL,	'u' },
 			{ NULL,		0,			NULL,	0 },
 		};
 
-		int c = getopt_long(argc, argv, "s:h", long_options, NULL);
+		int c = getopt_long(argc, argv, "hu:", long_options, NULL);
 		if (c == -1)
 			break;
 		switch (c) {
 		case 'h':
 			usage(0);
+			break;
+		case 'u':
+			usleep_val = strtoul(optarg, NULL, 10);
 			break;
 		default:
 			usage(1);

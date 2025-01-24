@@ -5,7 +5,8 @@
 .B pip_stress \- Priority Inheritance with processes
 .SH SYNOPSIS
 .B pip_stress
-
+.RB [ \-u|\-\-usleep
+.IR TIME ]
 .SH DESCRIPTION
 This program demonstrates the technique of using priority inheritance (PI)
 mutexes with processes instead of threads.
@@ -41,6 +42,9 @@ merely increase the time that the low priority process sleeps while
 holding the lock. (usleep);
 Also note that you have to run as a user with permission to change
 scheduling priorities.
+.SH OPTIONS
+.IP "\-u TIME,\-\-usleep=TIME"
+Specify the sleep time in usec of the low priority process. Defaults to 500.
 .BR
 .SH AUTHOR
 pip_stress was written by John Kacur <jkacur at redhat.com>
