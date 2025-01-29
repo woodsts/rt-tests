@@ -42,6 +42,7 @@
 #define __NR_sched_getattr		275
 #endif
 
+#if ! __GLIBC_PREREQ(2, 41)
 struct sched_attr {
 	uint32_t size;
 	uint32_t sched_policy;
@@ -67,5 +68,6 @@ int sched_getattr(pid_t pid,
 		  struct sched_attr *attr,
 		  unsigned int size,
 		  unsigned int flags);
+#endif
 
 #endif /* __RT_SCHED_H__ */
