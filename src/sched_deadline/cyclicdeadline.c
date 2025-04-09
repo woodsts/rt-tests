@@ -688,7 +688,7 @@ static void usage(int error)
 	       "-a [CPUSET] --affinity     Comma/hyphen separated list of CPUs to run deadline\n"
 	       "                           tasks on. An empty CPUSET runs on all CPUs a deadline\n"
 	       "                           task.\n"
-	       "-D TIME  --duration        Specify a length for the test run.\n"
+	       "-D TIME  --duration        Specify a length in seconds for the test run.\n"
 	       "                           Append 'm', 'h', or 'd' to specify minutes, hours or\n"
 	       "                           days\n"
 	       "-h       --help            Show this help menu.\n"
