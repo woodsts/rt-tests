@@ -56,9 +56,9 @@ struct sched_attr {
 	uint32_t sched_priority;
 
 	/* SCHED_DEADLINE */
-	uint64_t sched_runtime;
-	uint64_t sched_deadline;
-	uint64_t sched_period;
+	unsigned long long sched_runtime;
+	unsigned long long sched_deadline;
+	unsigned long long sched_period;
 };
 
 int sched_setattr(pid_t pid,

@@ -1294,7 +1294,7 @@ void print_sched_attr(const char *name, struct sched_attr *sa)
 		printf(" priority %d\n", sa->sched_priority);
 		break;
 	case SCHED_DEADLINE:
-		printf(" runtime %" PRIu64 " deadline %" PRIu64 " period %" PRIu64 "\n",
+		printf(" runtime %llu deadline %llu period %llu\n",
 			sa->sched_runtime, sa->sched_deadline,
 			sa->sched_period);
 		break;
