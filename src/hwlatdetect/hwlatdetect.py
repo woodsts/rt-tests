@@ -33,6 +33,11 @@ def info(istr):
         print(istr)
 
 
+def group_sep(num_hex):
+    """ Add a comma as a grouping separator every 32 bits to a hexadecimal number. """
+    return ','.join([num_hex[max(i - 8, 0):i] for i in range(len(num_hex), 0, -8)][::-1])
+
+
 #
 # Class used to manage mounting and umounting the debugfs
 # filesystem. Note that if an instance of this class mounts
@@ -494,7 +499,7 @@ if __name__ == '__main__':
             for i in range(l, r + 1):
                 cpumask |= (1 << i)
         debug(f"set tracing_cpumask to {cpumask:x}")
-        detect.set("cpumask", f"{cpumask:x}")
+        detect.set("cpumask", group_sep(f"{cpumask:x}"))
 
     info(f"hwlatdetect:  test duration {detect.testduration} seconds")
     info(f"   detector: {detect.type}")
