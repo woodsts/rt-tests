@@ -100,11 +100,15 @@ Obsolete option.  Please use \-\-default\-system instead.
 .
 .TP
 .B \-c, \-\-clock=CLOCK
-select clock
+Select the system clock to be used for calculating the measuring thread's
+latency. Allowed CLOCK values are:
 .br
 0 = CLOCK_MONOTONIC (default)
 .br
 1 = CLOCK_REALTIME
+.br
+For more information on the Linux implementation of such clocks, check
+.MR clock_getres 2
 .
 .TP
 .B \-x, \-\-posix_timers
