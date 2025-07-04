@@ -42,23 +42,23 @@ cyclictest \- High resolution test program
 .IR duration\-mhd ]
 .RB [ \-l\~\c
 .IR num\-loops ]
+.RB [ \-\-dbg_cyclictest ]
+.RB [ \-o\~\c
+.IR oscope\-red ]
 .RB [ \-f\~\c
 .IR fifo\-path ]
 .RB [ \-h\~\c
 .IR max\-latency\-usec ]
 .RB [ \-H\~\c
 .IR max\-latency\-usec ]
-.RB [ \-o\~\c
-.IR oscope\-red ]
-.RB [ \-\-histfile\~\c
-.IR file\-path ]
-.RB [ \-\-json\~\c
-.IR file\-path ]
 .RB [ \-\-spike\~\c
 .IR trigger\-point-usec ]
 .RB [ \-\-spike\-nodes\~\c
 .IR num\-nodes ]
-.RB [ \-\-dbg_cyclictest ]
+.RB [ \-\-histfile\~\c
+.IR file\-path ]
+.RB [ \-\-json\~\c
+.IR file\-path ]
 .RB [ \-\-smi ]
 .YS
 .
@@ -210,7 +210,15 @@ Set the number of loops. The default is 0 (endless). This option is useful
 for automated tests with a given number of test cycles. Cyclictest is
 stopped once the number of timer intervals has been reached.
 .
-.SS "Other options"
+.SS "Output options"
+.
+.TP
+.B \-\-dbg_cyclictest
+Print info userful for debugging cyclictest
+.
+.TP
+.B \-o, \-\-oscope=RED
+Oscilloscope mode, reduce verbose output by RED.
 .
 .TP
 .B \-F, \-\-fifo=<path>
@@ -227,6 +235,16 @@ priority.
 Same as -h except that an additional histogram column is displayed at the
 right that contains summary data of all thread histograms. If cyclictest
 runs a single thread only, the -H option is equivalent to -h.
+.
+.TP
+.B \-\-spike=<trigger>
+record all spikes > trigger
+.
+.TP
+.B \-\-spike-nodes=[num of nodes]
+These are the maximum number of spikes we can record.
+.br
+The default is 1024 if not specified.
 .
 .TP
 .B \-\-histfile=<path>
@@ -247,27 +265,9 @@ Show results in nanoseconds instead of microseconds, which is the default
 unit.
 .
 .TP
-.B \-o, \-\-oscope=RED
-Oscilloscope mode, reduce verbose output by RED.
-.
-.TP
 .B \-q, \-\-quiet
 Print a summary only on exit. Useful for automated tests, where only the
 summary output needs to be captured.
-.
-.TP
-.B \-\-spike=<trigger>
-record all spikes > trigger
-.
-.TP
-.B \-\-spike-nodes=[num of nodes]
-These are the maximum number of spikes we can record.
-.br
-The default is 1024 if not specified.
-.
-.TP
-.B \\-\-smi
-Enable SMI count/detection on processors with SMI count support.
 .
 .TP
 .B \-u, \-\-unbuffered
@@ -280,9 +280,11 @@ statistical information about the latency distribution. The output is sent
 to stdout. The output format is: "n:c:v", where n is the task number, c is
 the count, and v is the latency value in microseconds.
 .
+.SS "Other options"
+.
 .TP
-.B \-\-dbg_cyclictest
-Print info userful for debugging cyclictest
+.B \\-\-smi
+Enable SMI count/detection on processors with SMI count support.
 .
 .SH "See also"
 .BR numa (3),
