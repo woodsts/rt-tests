@@ -291,6 +291,24 @@ the count, and v is the latency value in microseconds.
 .B \\-\-smi
 Enable SMI count/detection on processors with SMI count support.
 .
+.SH "Example invocation"
+.
+Testing a realtime system is hardware and workload dependent.  With that
+in mind, below cyclictest example invocation can provide a good start:
+.PP
+.nf
+.B cyclictest
+   --default-system
+   --secaligned
+   --interval=250
+   --distance=0
+   --mlockall
+   --smp
+   --priority=98
+   --histogram=1000
+   --histfile=output.txt
+.fi
+
 .SH "See also"
 .BR numa (3),
 .BR numactl (8),
