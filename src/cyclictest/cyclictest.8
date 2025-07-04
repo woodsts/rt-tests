@@ -19,7 +19,7 @@ cyclictest \- High resolution test program
 .SY cyclictest
 .RI "[ \-hfmnqrsvMS ] [\-a " proc " ] [\-A " align " ] [\-b " usec " ] [\-c " clock " ] [\-d " dist " ] \
 [\-h " histogram " ] [\-i " intv " ] [\-\-json " filename " ] [\-l " loop " ] [\-o " red " ] \
-[\-p " prio " ] [\-t " num " ] [\-D " time "] [\-y " policy " ]"
+[\-p " prio " ] [\-t " num " ] [\-D " time " ]"
 
 .\" .SH DESCRIPTION
 .\" This manual page documents briefly the
@@ -41,7 +41,7 @@ in the set in numeric order, in a round\-robin fashion.
 .br
 The set of processors can be specified as A,B,C, or A-C, or A-B,D-F, and so on*.
 The ! character can be used to negate a set.  For example, !B-D means to use all
-available CPUs except B through D.  The cpu numbers are the same as shown in the 
+available CPUs except B through D.  The cpu numbers are the same as shown in the
 .I processor
 field in /proc/cpuinfo.  See numa(3) for more information on specifying CPU sets.
 * Support for CPU sets requires libnuma version >= 2.  For libnuma v1, PROC-SET,
