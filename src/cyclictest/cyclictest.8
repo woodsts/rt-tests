@@ -170,11 +170,10 @@ write a trace mark when \-b latency is exceeded.
 force unbuffered output for live processing
 .TP
 .B \-v, \-\-verbose
-Output values on stdout for statistics. This option is used to gather statistical information about the latency distribution. The output is sent to stdout. The output format is:
-
-n:c:v
-
-where n=task number c=count v=latency value in us.
+Output values on stdout for statistics. This option is used to gather
+statistical information about the latency distribution. The output is sent
+to stdout. The output format is: "n:c:v", where n is the task number, c is
+the count, and v is the latency value in microseconds.
 .TP
 .B \-\-dbg_cyclictest
 Print info userful for debugging cyclictest
