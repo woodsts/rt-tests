@@ -7,33 +7,58 @@ cyclictest \- High resolution test program
 .
 .SH Synopsis
 .SY cyclictest
-.RB [ \-fmMnqrsMv ]
+.RB [ \-mMNqrRsSuvx ]
 .RB [ \-a\~\c
-.IR proc ]
+.IR proc\-set ]
 .RB [ \-A\~\c
-.IR align ]
+.IR alignment\-usec ]
 .RB [ \-b\~\c
-.IR usec ]
+.IR break\-usec ]
 .RB [ \-c\~\c
-.IR clock ]
+.IR clock\-type ]
 .RB [ \-d\~\c
-.IR dist ]
-.RB [ \-h\~\c
-.IR histogram ]
-.RB [ \-i\~\c
-.IR intv ]
-.RB [ \-\-json\~\c
-.IR filename ]
-.RB [ \-l\~\c
-.IR loop ]
-.RB [ \-o\~\c
-.IR red ]
-.RB [ \-p\~\c
-.IR prio ]
-.RB [ \-t\~\c
-.IR num ]
+.IR distance\-usec ]
 .RB [ \-D\~\c
-.IR time ]
+.IR duration\-mhd ]
+.RB [ \-f\~\c
+.IR fifo\-path ]
+.RB [ \-h\~\c
+.IR max\-latency\-usec ]
+.RB [ \-H\~\c
+.IR max\-latency\-usec ]
+.RB [ \-i\~\c
+.IR interval\-usec ]
+.RB [ \-l\~\c
+.IR num\-loops ]
+.RB [ \-o\~\c
+.IR oscope\-red ]
+.RB [ \-p\~\c
+.IR thread\-prio ]
+.RB [ \-t\~\c
+.IR num\-threads ]
+.RB [ \-\-deepest\-idle\-state\~\c
+.IR idle-state-num ]
+.RB [ \-\-histfile\~\c
+.IR file\-path ]
+.RB [ \-\-json\~\c
+.IR file\-path ]
+.RB [ \-\-latency\~\c
+.IR pm\-c\-state ]
+.RB [ \-\-mainaffinity\~\c
+.IR proc-set ]
+.RB [ \-\-policy\~\c
+.IR threads\-sched\-policy ]
+.RB [ \-\-secaligned\~\c
+.IR wakeup\-usec ]
+.RB [ \-\-spike\~\c
+.IR trigger\-point-usec ]
+.RB [ \-\-spike\-nodes\~\c
+.IR num\-nodes ]
+.RB [ \-\-dbg_cyclictest ]
+.RB [ \-\-default\-system ]
+.RB [ \-\-priospread ]
+.RB [ \-\-smi ]
+.RB [ \-\-tracemark ]
 .YS
 .
 .SH Options
