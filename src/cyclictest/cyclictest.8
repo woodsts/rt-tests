@@ -16,14 +16,18 @@ cyclictest \- High resolution test program
 .IR idle-state-num ]
 .RB [ \-c\~\c
 .IR clock\-type ]
-.RB [ \-a\~\c
-.IR proc\-set ]
-.RB [ \-A\~\c
-.IR alignment\-usec ]
-.RB [ \-b\~\c
-.IR break\-usec ]
 .RB [ \-d\~\c
 .IR distance\-usec ]
+.RB [ \-i\~\c
+.IR interval\-usec ]
+.RB [ \-\-secaligned\~\c
+.IR wakeup\-usec ]
+.RB [ \-A\~\c
+.IR alignment\-usec ]
+.RB [ \-a\~\c
+.IR proc\-set ]
+.RB [ \-b\~\c
+.IR break\-usec ]
 .RB [ \-D\~\c
 .IR duration\-mhd ]
 .RB [ \-f\~\c
@@ -32,8 +36,6 @@ cyclictest \- High resolution test program
 .IR max\-latency\-usec ]
 .RB [ \-H\~\c
 .IR max\-latency\-usec ]
-.RB [ \-i\~\c
-.IR interval\-usec ]
 .RB [ \-l\~\c
 .IR num\-loops ]
 .RB [ \-o\~\c
@@ -50,8 +52,6 @@ cyclictest \- High resolution test program
 .IR proc-set ]
 .RB [ \-\-policy\~\c
 .IR threads\-sched\-policy ]
-.RB [ \-\-secaligned\~\c
-.IR wakeup\-usec ]
 .RB [ \-\-spike\~\c
 .IR trigger\-point-usec ]
 .RB [ \-\-spike\-nodes\~\c
@@ -127,6 +127,25 @@ not be used for reproducible tests.
 Check clock resolution, calling clock_gettime() many times. List of
 lock_gettime() values will be reported with -X
 .
+.SS "Thread-waekup timing options"
+.
+.TP
+.B \-d, \-\-distance=DIST
+Distance of thread intervals in us, default = 500
+.
+.TP
+.B \-i, \-\-interval=INTV
+Set the base interval of the thread(s) in microseconds (default is
+1000us). This sets the interval of the first thread. See also \-d.
+.
+.TP
+.B \-\-secaligned [USEC]
+align thread wakeups to the next full second and apply the optional offset.
+.
+.TP
+.B \-A, \-\-align=USEC
+Align thread wakeups to a specific offset in microseconds
+.
 .SS "Other options"
 .
 .TP
@@ -145,16 +164,8 @@ sets.  * Support for CPU sets requires libnuma version >= 2.  For libnuma
 v1, PROC-SET, if specified, must be a single CPU number.
 .
 .TP
-.B \-A, \-\-align=USEC
-Align thread wakeups to a specific offset in microseconds
-.
-.TP
 .B \-b, \-\-breaktrace=USEC
 Send break trace command when latency > USEC
-.
-.TP
-.B \-d, \-\-distance=DIST
-Distance of thread intervals in us, default = 500
 .
 .TP
 .B \-D, \-\-duration=TIME
@@ -181,11 +192,6 @@ runs a single thread only, the -H option is equivalent to -h.
 .TP
 .B \-\-histfile=<path>
 Dump the latency histogram to <path> instead of stdout.
-.
-.TP
-.B \-i, \-\-interval=INTV
-Set the base interval of the thread(s) in microseconds (default is
-1000us). This sets the interval of the first thread. See also \-d.
 .
 .TP
 .B \-\-json=FILENAME
@@ -239,10 +245,6 @@ spread priority levels starting at a specified value
 .B \-q, \-\-quiet
 Print a summary only on exit. Useful for automated tests, where only the
 summary output needs to be captured.
-.
-.TP
-.B \-\-secaligned [USEC]
-align thread wakeups to the next full second and apply the optional offset.
 .
 .TP
 .B \\-S, \-\-smp
