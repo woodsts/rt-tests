@@ -180,6 +180,12 @@ field in /proc/cpuinfo.  See numa(3) for more information on specifying CPU
 sets.  * Support for CPU sets requires libnuma version >= 2.  For libnuma
 v1, PROC-SET, if specified, must be a single CPU number.
 .
+.SS "Memory options"
+.
+.TP
+.B \-m, \-\-mlockall
+Lock current and future memory allocations to prevent being paged out
+.
 .SS "Other options"
 .
 .TP
@@ -221,10 +227,6 @@ Write final results into FILENAME, JSON formatted.
 Set the number of loops. The default is 0 (endless). This option is useful
 for automated tests with a given number of test cycles. Cyclictest is
 stopped once the number of timer intervals has been reached.
-.
-.TP
-.B \-m, \-\-mlockall
-Lock current and future memory allocations to prevent being paged out
 .
 .TP
 .B \\-M, \-\-refresh_on_max
