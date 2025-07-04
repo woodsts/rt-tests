@@ -37,6 +37,7 @@ cyclictest \- High resolution test program
 .RB [ \-\-priospread ]
 .RB [ \-b\~\c
 .IR break\-usec ]
+.RB [ \-\-tracemark ]
 .RB [ \-D\~\c
 .IR duration\-mhd ]
 .RB [ \-f\~\c
@@ -59,7 +60,6 @@ cyclictest \- High resolution test program
 .IR num\-nodes ]
 .RB [ \-\-dbg_cyclictest ]
 .RB [ \-\-smi ]
-.RB [ \-\-tracemark ]
 .YS
 .
 .SY cyclictest
@@ -186,11 +186,17 @@ v1, PROC-SET, if specified, must be a single CPU number.
 .B \-m, \-\-mlockall
 Lock current and future memory allocations to prevent being paged out
 .
-.SS "Other options"
+.SS "Tracing options"
 .
 .TP
 .B \-b, \-\-breaktrace=USEC
 Send break trace command when latency > USEC
+.
+.TP
+.B \-\-tracemark
+write a trace mark when \-b latency is exceeded.
+.
+.SS "Other options"
 .
 .TP
 .B \-D, \-\-duration=TIME
@@ -260,10 +266,6 @@ The default is 1024 if not specified.
 .TP
 .B \\-\-smi
 Enable SMI count/detection on processors with SMI count support.
-.
-.TP
-.B \-\-tracemark
-write a trace mark when \-b latency is exceeded.
 .
 .TP
 .B \-u, \-\-unbuffered
