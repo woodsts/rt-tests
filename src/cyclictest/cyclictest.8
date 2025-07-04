@@ -24,6 +24,10 @@ cyclictest \- High resolution test program
 .IR wakeup\-usec ]
 .RB [ \-A\~\c
 .IR alignment\-usec ]
+.RB [ \-t\~\c
+.IR num\-threads ]
+.RB [ \-\-mainaffinity\~\c
+.IR proc-set ]
 .RB [ \-a\~\c
 .IR proc\-set ]
 .RB [ \-b\~\c
@@ -42,14 +46,10 @@ cyclictest \- High resolution test program
 .IR oscope\-red ]
 .RB [ \-p\~\c
 .IR thread\-prio ]
-.RB [ \-t\~\c
-.IR num\-threads ]
 .RB [ \-\-histfile\~\c
 .IR file\-path ]
 .RB [ \-\-json\~\c
 .IR file\-path ]
-.RB [ \-\-mainaffinity\~\c
-.IR proc-set ]
 .RB [ \-\-policy\~\c
 .IR threads\-sched\-policy ]
 .RB [ \-\-spike\~\c
@@ -146,7 +146,24 @@ align thread wakeups to the next full second and apply the optional offset.
 .B \-A, \-\-align=USEC
 Align thread wakeups to a specific offset in microseconds
 .
-.SS "Other options"
+.SS "SMP-related options"
+.
+.TP
+.B \\-S, \-\-smp
+Set options for standard testing on SMP systems. Equivalent to using the
+options: "\-t \-a" as well keeping any specified priority equal across all
+threads
+.
+.TP
+.B \-t, \-\-threads[=NUM]
+Set the number of test threads (default is 1). Create NUM test threads. If
+NUM is not specified, NUM is set to the number of available CPUs. See \-d,
+\-i and \-p for further information.
+.
+.TP
+.B \-\-mainaffinity=CPUSET
+Run the main thread on CPU #N. This only affects the main thread and not
+the measurement threads
 .
 .TP
 .B \-a, \-\-affinity[=PROC-SET]
@@ -162,6 +179,8 @@ as shown in the
 field in /proc/cpuinfo.  See numa(3) for more information on specifying CPU
 sets.  * Support for CPU sets requires libnuma version >= 2.  For libnuma
 v1, PROC-SET, if specified, must be a single CPU number.
+.
+.SS "Other options"
 .
 .TP
 .B \-b, \-\-breaktrace=USEC
@@ -204,11 +223,6 @@ for automated tests with a given number of test cycles. Cyclictest is
 stopped once the number of timer intervals has been reached.
 .
 .TP
-.B \-\-mainaffinity=CPUSET
-Run the main thread on CPU #N. This only affects the main thread and not
-the measurement threads
-.
-.TP
 .B \-m, \-\-mlockall
 Lock current and future memory allocations to prevent being paged out
 .
@@ -247,12 +261,6 @@ Print a summary only on exit. Useful for automated tests, where only the
 summary output needs to be captured.
 .
 .TP
-.B \\-S, \-\-smp
-Set options for standard testing on SMP systems. Equivalent to using the
-options: "\-t \-a" as well keeping any specified priority equal across all
-threads
-.
-.TP
 .B \-\-spike=<trigger>
 record all spikes > trigger
 .
@@ -265,12 +273,6 @@ The default is 1024 if not specified.
 .TP
 .B \\-\-smi
 Enable SMI count/detection on processors with SMI count support.
-.
-.TP
-.B \-t, \-\-threads[=NUM]
-Set the number of test threads (default is 1). Create NUM test threads. If
-NUM is not specified, NUM is set to the number of available CPUs. See \-d,
-\-i and \-p for further information.
 .
 .TP
 .B \-\-tracemark
