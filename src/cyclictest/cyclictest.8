@@ -14,14 +14,14 @@ cyclictest \- High resolution test program
 .IR pm\-c\-state ]
 .RB [ \-\-deepest\-idle\-state\~\c
 .IR idle-state-num ]
+.RB [ \-c\~\c
+.IR clock\-type ]
 .RB [ \-a\~\c
 .IR proc\-set ]
 .RB [ \-A\~\c
 .IR alignment\-usec ]
 .RB [ \-b\~\c
 .IR break\-usec ]
-.RB [ \-c\~\c
-.IR clock\-type ]
 .RB [ \-d\~\c
 .IR distance\-usec ]
 .RB [ \-D\~\c
@@ -95,6 +95,38 @@ cpus.
 Save battery when running cyclictest. This will give you poorer realtime
 results, but will not drain your battery so quickly.
 .
+.SS "Sleep-mechanism clock options"
+.
+.TP
+.B \-c, \-\-clock=CLOCK
+select clock
+.br
+0 = CLOCK_MONOTONIC (default)
+.br
+1 = CLOCK_REALTIME
+.
+.TP
+.B \-x, \-\-posix_timers
+Use POSIX timers instead of clock_nanosleep.
+.
+.TP
+.B \-s, \-\-system
+Use sys_nanosleep and sys_setitimer instead of posix timers. Note, that \-s
+can only be used with one thread because itimers are per process and not
+per thread. \-s uses the nanosleep syscall and is not restricted to one
+thread.
+.
+.TP
+.B \-r, \-\-relative
+Use relative timers instead of absolute. The default behaviour of the tests
+is to use absolute timers. This option is there for completeness and should
+not be used for reproducible tests.
+.
+.TP
+.B \-R, \-\-resolution
+Check clock resolution, calling clock_gettime() many times. List of
+lock_gettime() values will be reported with -X
+.
 .SS "Other options"
 .
 .TP
@@ -119,14 +151,6 @@ Align thread wakeups to a specific offset in microseconds
 .TP
 .B \-b, \-\-breaktrace=USEC
 Send break trace command when latency > USEC
-.
-.TP
-.B \-c, \-\-clock=CLOCK
-select clock
-.br
-0 = CLOCK_MONOTONIC (default)
-.br
-1 = CLOCK_REALTIME
 .
 .TP
 .B \-d, \-\-distance=DIST
@@ -217,26 +241,8 @@ Print a summary only on exit. Useful for automated tests, where only the
 summary output needs to be captured.
 .
 .TP
-.B \-r, \-\-relative
-Use relative timers instead of absolute. The default behaviour of the tests
-is to use absolute timers. This option is there for completeness and should
-not be used for reproducible tests.
-.
-.TP
-.B \-R, \-\-resolution
-Check clock resolution, calling clock_gettime() many times. List of
-lock_gettime() values will be reported with -X
-.
-.TP
 .B \-\-secaligned [USEC]
 align thread wakeups to the next full second and apply the optional offset.
-.
-.TP
-.B \-s, \-\-system
-Use sys_nanosleep and sys_setitimer instead of posix timers. Note, that \-s
-can only be used with one thread because itimers are per process and not
-per thread. \-s uses the nanosleep syscall and is not restricted to one
-thread.
 .
 .TP
 .B \\-S, \-\-smp
@@ -282,10 +288,6 @@ the count, and v is the latency value in microseconds.
 .TP
 .B \-\-dbg_cyclictest
 Print info userful for debugging cyclictest
-.
-.TP
-.B \-x, \-\-posix_timers
-Use POSIX timers instead of clock_nanosleep.
 .
 .SH "See also"
 .BR numa (3),
