@@ -30,6 +30,11 @@ cyclictest \- High resolution test program
 .IR proc-set ]
 .RB [ \-a\~\c
 .IR proc\-set ]
+.RB [ \-\-policy\~\c
+.IR threads\-sched\-policy ]
+.RB [ \-p\~\c
+.IR thread\-prio ]
+.RB [ \-\-priospread ]
 .RB [ \-b\~\c
 .IR break\-usec ]
 .RB [ \-D\~\c
@@ -44,20 +49,15 @@ cyclictest \- High resolution test program
 .IR num\-loops ]
 .RB [ \-o\~\c
 .IR oscope\-red ]
-.RB [ \-p\~\c
-.IR thread\-prio ]
 .RB [ \-\-histfile\~\c
 .IR file\-path ]
 .RB [ \-\-json\~\c
 .IR file\-path ]
-.RB [ \-\-policy\~\c
-.IR threads\-sched\-policy ]
 .RB [ \-\-spike\~\c
 .IR trigger\-point-usec ]
 .RB [ \-\-spike\-nodes\~\c
 .IR num\-nodes ]
 .RB [ \-\-dbg_cyclictest ]
-.RB [ \-\-priospread ]
 .RB [ \-\-smi ]
 .RB [ \-\-tracemark ]
 .YS
@@ -241,21 +241,6 @@ unit.
 .TP
 .B \-o, \-\-oscope=RED
 Oscilloscope mode, reduce verbose output by RED.
-.
-.TP
-.B \-p, \-\-prio=PRIO
-Set the priority of the first thread. The given priority is set to the
-first test thread. Each further thread gets a lower priority:
-Priority(Thread N) = max(Priority(Thread N\-1) \- 1, 0)
-.
-.TP
-.B \-\-policy=NAME
-set the scheduler policy of the measurement threads where NAME is one of:
-other, normal, batch, idle, fifo, rr
-.
-.TP
-.B \-\-priospread
-spread priority levels starting at a specified value
 .
 .TP
 .B \-q, \-\-quiet
