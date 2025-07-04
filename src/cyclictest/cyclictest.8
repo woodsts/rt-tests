@@ -75,9 +75,11 @@ display a usage message and exit.
 .
 .TP
 .B \-\-default\-system
-Don't attempt to tune the system from cyclictest. Power management is not
-suppressed. This might give poorer results, but will allow you to discover
-if you need to tune the system.
+Stop cyclictest from force-tuning the system. Without this option,
+cyclictest writes a value of 0 to /dev/cpu_dma_latency, which prevents the
+CPU from entering deep sleep states.  While such force-tuning might help at
+showing lower latency numbers, it obscures the fact that the system may
+require additional tuning.
 .
 .TP
 .B \-\-latency=PM_Q0S
