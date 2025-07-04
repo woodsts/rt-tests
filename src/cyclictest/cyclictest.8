@@ -1,18 +1,6 @@
 .\" SPDX-License-Identifier: GPL-2.0-only
-.\"                                      Hey, EMACS: -*- nroff -*-
+.\" For a man pages tutorial, check groff_man_style(7)
 .TH CYCLICTEST 8 "April 22, 2016"
-.\" Please adjust this date whenever revising the manpage.
-.\"
-.\" Some roff macros, for reference:
-.\" .nh        disable hyphenation
-.\" .hy        enable hyphenation
-.\" .ad l      left justify
-.\" .ad b      justify to both left and right margins
-.\" .nf        disable filling
-.\" .fi        enable filling
-.\" .br        insert line break
-.\" .sp <n>    insert n+1 empty lines
-.\" for manpage-specific macros, see man(7)
 .SH NAME
 cyclictest \- High resolution test program
 .SH SYNOPSIS
@@ -21,18 +9,11 @@ cyclictest \- High resolution test program
 [\-h " histogram " ] [\-i " intv " ] [\-\-json " filename " ] [\-l " loop " ] [\-o " red " ] \
 [\-p " prio " ] [\-t " num " ] [\-D " time " ]"
 
-.\" .SH DESCRIPTION
-.\" This manual page documents briefly the
-.\" .B cyclictest commands.
-.\" .PP
-.\" \fI<whatever>\fP escape sequences to invode bold face and italics, respectively.
-.\" \fBcyclictest\fP is a program that...
 .SH OPTIONS
 These programs follow the usual GNU command line syntax, with long
 options starting with two dashes ('\-\-').
 .br
 A summary of options is included below.
-.\" For a complete description, see the Info files.
 .TP
 .B \-a, \-\-affinity[=PROC-SET]
 Run threads on the set of processors given by PROC-SET.  If PROC-SET is not
@@ -184,10 +165,6 @@ Use POSIX timers instead of clock_nanosleep.
 .SH SEE ALSO
 .BR numa (3),
 .BR numactl (8),
-.\" .br
-.\" The programs are documented fully by
-.\" .IR "The Rise and Fall of a Fooish Bar" ,
-.\" available via the Info system.
 .SH AUTHOR
 cyclictest was written by Thomas Gleixner <tglx@linuxtronix.de>.
 .PP
