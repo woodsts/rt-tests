@@ -9,6 +9,11 @@ cyclictest \- High resolution test program
 .
 .SY cyclictest
 .RB [ \-mMNqrRsSuvx ]
+.RB [ \-\-default\-system ]
+.RB [ \-\-latency\~\c
+.IR pm\-c\-state ]
+.RB [ \-\-deepest\-idle\-state\~\c
+.IR idle-state-num ]
 .RB [ \-a\~\c
 .IR proc\-set ]
 .RB [ \-A\~\c
@@ -37,14 +42,10 @@ cyclictest \- High resolution test program
 .IR thread\-prio ]
 .RB [ \-t\~\c
 .IR num\-threads ]
-.RB [ \-\-deepest\-idle\-state\~\c
-.IR idle-state-num ]
 .RB [ \-\-histfile\~\c
 .IR file\-path ]
 .RB [ \-\-json\~\c
 .IR file\-path ]
-.RB [ \-\-latency\~\c
-.IR pm\-c\-state ]
 .RB [ \-\-mainaffinity\~\c
 .IR proc-set ]
 .RB [ \-\-policy\~\c
@@ -56,7 +57,6 @@ cyclictest \- High resolution test program
 .RB [ \-\-spike\-nodes\~\c
 .IR num\-nodes ]
 .RB [ \-\-dbg_cyclictest ]
-.RB [ \-\-default\-system ]
 .RB [ \-\-priospread ]
 .RB [ \-\-smi ]
 .RB [ \-\-tracemark ]
@@ -70,6 +70,32 @@ cyclictest \- High resolution test program
 .
 .B \-\-help
 display a usage message and exit.
+.
+.SS "System-altering options"
+.
+.TP
+.B \-\-default\-system
+Don't attempt to tune the system from cyclictest. Power management is not
+suppressed. This might give poorer results, but will allow you to discover
+if you need to tune the system.
+.
+.TP
+.B \-\-latency=PM_Q0S
+power management latency target value. This value is written to
+/dev/cpu_dma_latency and affects c-states. The default is 0
+.
+.TP
+.B \-\-deepest\-idle\-state=n
+Reduce exit from idle latency by limiting idle state up to n on used cpus
+(-1 disables all idle states). Power management is not suppresed on other
+cpus.
+.
+.TP
+.B \-\-laptop
+Save battery when running cyclictest. This will give you poorer realtime
+results, but will not drain your battery so quickly.
+.
+.SS "Other options"
 .
 .TP
 .B \-a, \-\-affinity[=PROC-SET]
@@ -101,18 +127,6 @@ select clock
 0 = CLOCK_MONOTONIC (default)
 .br
 1 = CLOCK_REALTIME
-.
-.TP
-.B \-\-deepest\-idle\-state=n
-Reduce exit from idle latency by limiting idle state up to n on used cpus
-(-1 disables all idle states). Power management is not suppresed on other
-cpus.
-.
-.TP
-.B \-\-default\-system
-Don't attempt to tune the system from cyclictest. Power management is not
-suppressed. This might give poorer results, but will allow you to discover
-if you need to tune the system.
 .
 .TP
 .B \-d, \-\-distance=DIST
@@ -152,16 +166,6 @@ Set the base interval of the thread(s) in microseconds (default is
 .TP
 .B \-\-json=FILENAME
 Write final results into FILENAME, JSON formatted.
-.
-.TP
-.B \-\-laptop
-Save battery when running cyclictest. This will give you poorer realtime
-results, but will not drain your battery so quickly.
-.
-.TP
-.B \-\-latency=PM_Q0S
-power management latency target value. This value is written to
-/dev/cpu_dma_latency and affects c-states. The default is 0
 .
 .TP
 .B \-l, \-\-loops=LOOPS
