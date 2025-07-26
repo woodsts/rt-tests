@@ -339,6 +339,10 @@ static int mount_cpuset(void)
 	if (fd < 0)
 		return fd;
 	ret = write(fd, "0", 2);
+	if (ret < 0) {
+		close(fd);
+		return ret;
+	}
 	close(fd);
 
 	return 0;
@@ -525,7 +529,14 @@ static void destroy_cpuset(const char *name, int print)
 		sprintf(buf, "%d", pid);
 		if (print)
 			printf("Moving %d out of %s\n", pid, name);
-		write(fd, buf, strlen(buf));
+		ret = write(fd, buf, strlen(buf));
+		if (ret < 0 && errno == ENOSPC) {
+			fclose(fp);
+			close(fd);
+			fatal("Cannot move tasks out of cpuset %s\n", name);
+		}
+
+
 	}
 	fclose(fp);
 	close(fd);
@@ -547,19 +558,24 @@ static void destroy_cpuset(const char *name, int print)
 static void teardown(void)
 {
 	int fd;
+	int ret;
 
 	if (all_cpus)
 		return;
 
 	fd = open_cpuset(CPUSET_PATH, "cpuset.cpu_exclusive");
 	if (fd >= 0) {
-		write(fd, "0", 2);
+		ret = write(fd, "0", 2);
+		if (ret < 0)
+			perror("cpuset.cpu_exclusive");
 		close(fd);
 	}
 
 	fd = open_cpuset(CPUSET_PATH, "cpuset.sched_load_balance");
 	if (fd >= 0) {
-		write(fd, "1", 2);
+		ret = write(fd, "1", 2);
+		if (ret < 0)
+			perror("cpuset.sched_load_balance");
 		close(fd);
 	}
 
@@ -1055,6 +1071,7 @@ int main(int argc, char **argv)
 	int nr_cpus;
 	int i;
 	int c;
+	int ret;
 
 	rt_init(argc, argv);
 
@@ -1277,7 +1294,9 @@ int main(int argc, char **argv)
 				  CPUSET_FL_CLONE_CHILDREN |
 				  CPUSET_FL_TASKS, pids);
 
-		system("cat /sys/fs/cgroup/cpuset/my_cpuset/tasks");
+		ret = system("cat /sys/fs/cgroup/cpuset/my_cpuset/tasks");
+		if (ret < 0)
+			perror("system call failed");
 	}
 
 	debug(debug_enable, "main thread %d\n", gettid());
