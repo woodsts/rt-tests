@@ -325,6 +325,7 @@ static void ftrace_write(char *buf, const char *fmt, ...)
 {
 	va_list ap;
 	int n;
+	int ret;
 
 	if (mark_fd < 0)
 		return;
@@ -333,7 +334,9 @@ static void ftrace_write(char *buf, const char *fmt, ...)
 	n = my_vsprintf(buf, BUFSIZ, fmt, ap);
 	va_end(ap);
 
-	write(mark_fd, buf, n);
+	ret = write(mark_fd, buf, n);
+	if (ret < 0)
+		perror("ftrace write failed");
 }
 
 /**
@@ -626,6 +629,10 @@ static int mount_cpuset(void)
 	if (fd < 0)
 		return fd;
 	ret = write(fd, "0", 2);
+	if (ret < 0) {
+		close(fd);
+		return ret;
+	}
 	close(fd);
 
 	return 0;
@@ -875,7 +882,19 @@ static void destroy_cpuset(const char *name, int print)
 		sprintf(buf, "%d", pid);
 		if (print)
 			printf("Moving %d out of %s\n", pid, name);
-		write(fd, buf, strlen(buf));
+		ret = write(fd, buf, strlen(buf));
+		if (ret < 0 && errno == ENOSPC) {
+			/*
+			 * If we get ENOSPC, then we have a problem, as it
+			 * means that the cpuset is full, and we cannot move
+			 * the tasks out of it.
+			 */
+			fclose(fp);
+			close(fd);
+			fprintf(stderr, "Failed to move %d out of %s\n", pid, name);
+			perror("write");
+			return;
+		}
 	}
 	fclose(fp);
 	close(fd);
@@ -910,16 +929,21 @@ static void destroy_cpuset(const char *name, int print)
 static void teardown(void)
 {
 	int fd;
+	int ret;
 
 	fd = open_cpuset(CPUSET_PATH, "cpuset.cpu_exclusive");
 	if (fd >= 0) {
-		write(fd, "0", 2);
+		ret = write(fd, "0", 2);
+		if (ret < 0)
+			perror("cpuset.cpu_exclusive");
 		close(fd);
 	}
 
 	fd = open_cpuset(CPUSET_PATH, "cpuset.sched_load_balance");
 	if (fd >= 0) {
-		write(fd, "1", 2);
+		ret = write(fd, "1", 2);
+		if (ret < 0)
+			perror("cpuset.sched_load_balance");
 		close(fd);
 	}
 
@@ -1790,6 +1814,7 @@ int main(int argc, char **argv)
 	int rt_task = 0;
 	int i;
 	int c;
+	int ret;
 
 	cpu_count = sysconf(_SC_NPROCESSORS_CONF);
 	if (cpu_count < 1) {
@@ -2041,7 +2066,9 @@ int main(int argc, char **argv)
 			exit(-1);
 		}
 
-		system("cat /sys/fs/cgroup/cpuset/my_cpuset/tasks");
+		ret = system("cat /sys/fs/cgroup/cpuset/my_cpuset/tasks");
+		if (ret < 0)
+			perror("system call failed");
 	}
 
 	pthread_barrier_wait(&barrier);
