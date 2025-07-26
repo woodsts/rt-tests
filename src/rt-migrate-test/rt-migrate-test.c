@@ -59,6 +59,7 @@ static void ftrace_write(const char *fmt, ...)
 {
 	va_list ap;
 	int n;
+	int ret;
 
 	if (mark_fd < 0)
 		return;
@@ -67,7 +68,9 @@ static void ftrace_write(const char *fmt, ...)
 	n = vsnprintf(buff, BUFSIZ, fmt, ap);
 	va_end(ap);
 
-	write(mark_fd, buff, n);
+	ret = write(mark_fd, buff, n);
+	if (ret < 0)
+		fprintf(stderr, "%s: write failed\n", __func__);
 }
 
 #define nano2sec(nan) (nan / 1000000000ULL)
