@@ -424,6 +424,7 @@ void tracemark(char *fmt, ...)
 {
 	va_list ap;
 	int len;
+	int ret;
 
 	/* bail out if we're not tracing */
 	/* or if the kernel doesn't support trace_mark */
@@ -435,14 +436,20 @@ void tracemark(char *fmt, ...)
 	va_end(ap);
 
 	/* write the tracemark message */
-	write(tracemark_fd, tracebuf, len);
+	ret = write(tracemark_fd, tracebuf, len);
+	if (ret != 2)
+		warn("trace stop write failed");
 }
 
 void tracing_stop(void)
 {
+	int ret;
+
 	if (trace_fd < 0)
 		return;
-	write(trace_fd, "0\n", 2);
+	ret = write(trace_fd, "0\n", 2);
+	if (ret != 2)
+		warn("trace stop write failed");
 }
 
 void enable_trace_mark(void)
