@@ -99,32 +99,6 @@ out:
 	return debugfileprefix;
 }
 
-int mount_debugfs(char *path)
-{
-	char *mountpoint = path;
-	char cmd[MAX_PATH];
-	char *prefix;
-	int ret;
-
-	/* if it's already mounted just return */
-	prefix = get_debugfileprefix();
-	if (strlen(prefix) != 0) {
-		info(1, "debugfs mountpoint: %s\n", prefix);
-		return 0;
-	}
-	if (!mountpoint)
-		mountpoint = "/sys/kernel/debug";
-
-	sprintf(cmd, "mount -t debugfs debugfs %s", mountpoint);
-	ret = system(cmd);
-	if (ret != 0) {
-		fprintf(stderr, "Error mounting debugfs at %s: %s\n",
-			mountpoint, strerror(errno));
-		return -1;
-	}
-	return 0;
-}
-
 static char **tracer_list;
 static char *tracer_buffer;
 static int num_tracers;
@@ -451,9 +425,6 @@ static int trace_file_exists(char *name)
 
 static void debugfs_prepare(void)
 {
-	if (mount_debugfs(NULL))
-		fatal("could not mount debugfs");
-
 	fileprefix = get_debugfileprefix();
 	if (!trace_file_exists("tracing_enabled") &&
 	    !trace_file_exists("tracing_on"))

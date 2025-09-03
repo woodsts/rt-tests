@@ -12,7 +12,6 @@
 
 int check_privs(void);
 char *get_debugfileprefix(void);
-int mount_debugfs(char *);
 int get_tracers(char ***);
 int valid_tracer(char *);
 
