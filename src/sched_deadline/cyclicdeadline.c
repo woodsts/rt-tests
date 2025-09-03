@@ -72,8 +72,6 @@ struct sched_data {
 	int bufmsk;
 
 	struct thread_stat stat;
-
-	char buff[BUFSIZ+1];
 };
 
 static int shutdown;
@@ -92,7 +90,6 @@ static int cpu_count;
 static int all_cpus;
 static int nr_threads;
 static int use_nsecs;
-static int mark_fd;
 static int quiet;
 static char jsonfile[MAX_PATH];
 
@@ -134,107 +131,6 @@ static const char *find_debugfs(void)
 	debugfs_found = 1;
 
 	return debugfs;
-}
-
-static int my_vsprintf(char *buf, int size, const char *fmt, va_list ap)
-{
-	const char *p;
-	char tmp[100];
-	char *s = buf;
-	char *end = buf + size;
-	char *str;
-	long long lng;
-	int l;
-	int i;
-
-	end[-1] = 0;
-
-	for (p = fmt; *p && s < end; p++) {
-		if (*p == '%') {
-			l = 0;
- again:
-			p++;
-			switch (*p) {
-			case 's':
-				if (l)
-					fatal("Illegal print format l used with %%s\n");
-				str = va_arg(ap, char *);
-				l = strlen(str);
-				strncpy(s, str, end - s);
-				s += l;
-				break;
-			case 'l':
-				l++;
-				goto again;
-			case 'd':
-				if (l == 1) {
-					if (sizeof(long) == 8)
-						l = 2;
-				}
-				if (l == 2)
-					lng = va_arg(ap, long long);
-				else if (l > 2)
-					fatal("Illegal print format l=%d\n", l);
-				else
-					lng = va_arg(ap, int);
-				i = 0;
-				while (lng > 0) {
-					tmp[i++] = (lng % 10) + '0';
-					lng /= 10;
-				}
-				tmp[i] = 0;
-				l = strlen(tmp);
-				if (!l) {
-					*s++ = '0';
-				} else {
-					while (l)
-						*s++ = tmp[--l];
-				}
-				break;
-			default:
-				fatal("Illegal print format '%c'\n", *p);
-			}
-			continue;
-		}
-		*s++ = *p;
-	}
-
-	return s - buf;
-}
-
-static void ftrace_write(char *buf, const char *fmt, ...)
-{
-	va_list ap;
-	int n;
-
-	if (mark_fd < 0)
-		return;
-
-	va_start(ap, fmt);
-	n = my_vsprintf(buf, BUFSIZ, fmt, ap);
-	va_end(ap);
-
-	write(mark_fd, buf, n);
-}
-
-static void setup_ftrace_marker(void)
-{
-	struct stat st;
-	const char *debugfs = find_debugfs();
-	char files[strlen(debugfs) + strlen("/tracing/trace_marker") + 1];
-	int ret;
-
-	if (strlen(debugfs) == 0)
-		return;
-
-	sprintf(files, "%s/tracing/trace_marker", debugfs);
-	ret = stat(files, &st);
-	if (ret >= 0)
-		goto found;
-	/* Do nothing if not mounted */
-	return;
-found:
-	mark_fd = open(files, O_WRONLY);
 }
 
 /*
@@ -804,16 +700,15 @@ static u64 do_runtime(struct sched_data *sd, u64 period)
 		 * preempting us when we started. If that's the case then
 		 * adjust the current period.
 		 */
-		ftrace_write(sd->buff,
-			     "Adjusting period: now: %lld period: %lld delta:%lld%s\n",
-			     now, period, delta, delta > sd->deadline_us / 2 ?
-			     " HUGE ADJUSTMENT" : "");
+		tracemark("Adjusting period: now: %lld period: %lld delta:%lld%s\n",
+			  now, period, delta, delta > sd->deadline_us / 2 ?
+			  " HUGE ADJUSTMENT" : "");
 		period = now;
 		next_period = period + sd->deadline_us;
 	}
 
-	ftrace_write(sd->buff, "start at %lld off=%lld (period=%lld next=%lld)\n",
-		     now, now - period, period, next_period);
+	tracemark("start at %lld off=%lld (period=%lld next=%lld)\n",
+		  now, now - period, period, next_period);
 
 
 	diff = now - period;
@@ -1293,7 +1188,6 @@ int main(int argc, char **argv)
 	if (mlockall(MCL_CURRENT|MCL_FUTURE) == -1)
 		warn("mlockall");
 
-	setup_ftrace_marker();
 	if (tracelimit && trace_marker)
 		enable_trace_mark();
 
