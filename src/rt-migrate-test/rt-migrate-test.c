@@ -39,9 +39,7 @@ static void setup_ftrace_marker(void)
 {
 	struct stat st;
 	char *files[] = {
-		"/sys/kernel/debug/tracing/trace_marker",
-		"/debug/tracing/trace_marker",
-		"/debugfs/tracing/trace_marker",
+		"/sys/kernel/tracing/trace_marker",
 	};
 	int ret;
 	unsigned int i;

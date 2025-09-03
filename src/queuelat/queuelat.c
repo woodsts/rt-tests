@@ -331,7 +331,7 @@ static void trace_open(void)
 {
 	int fd;
 
-	fd = open("/sys/kernel/debug/tracing/trace_marker", O_RDWR);
+	fd = open("/sys/kernel/tracing/trace_marker", O_RDWR);
 
 	if (fd == -1) {
 		perror("open");
