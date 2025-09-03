@@ -160,12 +160,16 @@ static int fill_sched_features(char *path)
 	if (strlen(debugfs) == 0)
 		return -1;
 
-	snprintf(path, MAX_PATH, "%s/sched/features", debugfs);
+	ret = snprintf(path, MAX_PATH, "%s/sched/features", debugfs);
+	if (ret >= MAX_PATH)
+		return -1;
 	ret = check_file_exists(path);
 	if (ret)
 		return 0;
 
-	snprintf(path, MAX_PATH, "%s/sched_features", debugfs);
+	ret = snprintf(path, MAX_PATH, "%s/sched_features", debugfs);
+	if (ret >= MAX_PATH)
+		return -1;
 	ret = check_file_exists(path);
 	if (ret)
 		return 0;
