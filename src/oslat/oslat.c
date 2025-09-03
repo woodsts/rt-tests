@@ -340,6 +340,7 @@ static void insert_bucket(struct thread *t, stamp_t value)
 		char *line = "%s: Trace threshold (%d us) triggered on cpu %d with %.*f us!\n";
 		tracemark(line, g.app_name, g.trace_threshold, t->core_i,
 			  g.precision, us);
+		tracing_stop();
 		err_quit(line, g.app_name, g.trace_threshold, t->core_i,
 			 g.precision, us);
 	}

@@ -427,7 +427,7 @@ void tracemark(char *fmt, ...)
 
 	/* bail out if we're not tracing */
 	/* or if the kernel doesn't support trace_mark */
-	if (tracemark_fd < 0 || trace_fd < 0)
+	if (tracemark_fd < 0)
 		return;
 
 	va_start(ap, fmt);
@@ -436,8 +436,12 @@ void tracemark(char *fmt, ...)
 
 	/* write the tracemark message */
 	write(tracemark_fd, tracebuf, len);
+}
 
-	/* now stop any trace */
+void tracing_stop(void)
+{
+	if (trace_fd < 0)
+		return;
 	write(trace_fd, "0\n", 2);
 }
 

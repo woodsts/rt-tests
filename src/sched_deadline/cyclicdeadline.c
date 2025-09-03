@@ -885,6 +885,7 @@ void *run_deadline(void *data)
 				break_thread_value = stat->max;
 				tracemark("hit latency threshold (%lld > %d)",
 						 (unsigned long long) stat->max, tracelimit);
+				tracing_stop();
 			}
 			pthread_mutex_unlock(&break_thread_id_lock);
 			break;

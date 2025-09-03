@@ -31,6 +31,7 @@ int parse_mem_string(char *str, uint64_t *val);
 
 void enable_trace_mark(void);
 void tracemark(char *fmt, ...) __attribute__((format(printf, 1, 2)));
+void tracing_stop(void);
 void disable_trace_mark(void);
 
 #define MSEC_PER_SEC		1000
