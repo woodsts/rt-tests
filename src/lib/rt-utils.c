@@ -33,7 +33,6 @@
 #define  MAX_TS_SIZE 64
 
 static char tracefs_prefix[MAX_PATH];
-static char *fileprefix;
 static int trace_fd = -1;
 static int tracemark_fd = -1;
 static __thread char tracebuf[TRACEBUFSIZ];
@@ -363,12 +362,17 @@ int parse_mem_string(char *str, uint64_t *val)
 static void open_tracemark_fd(void)
 {
 	char path[MAX_PATH];
+	int n;
 
 	/*
 	 * open the tracemark file if it's not already open
 	 */
 	if (tracemark_fd < 0) {
-		sprintf(path, "%s/%s", fileprefix, "trace_marker");
+		n = snprintf(path, sizeof(path), "%s/%s", tracefs_prefix, "trace_marker");
+		if (n >= sizeof(path)) {
+			warn("tracefs path too long\n");
+			return;
+		}
 		tracemark_fd = open(path, O_WRONLY);
 		if (tracemark_fd < 0) {
 			warn("unable to open trace_marker file: %s\n", path);
@@ -382,7 +386,11 @@ static void open_tracemark_fd(void)
 	 * if we hit a breaktrace threshold
 	 */
 	if (trace_fd < 0) {
-		sprintf(path, "%s/%s", fileprefix, "tracing_on");
+		n = snprintf(path, sizeof(path), "%s/%s", tracefs_prefix, "tracing_on");
+		if (n >= sizeof(path)) {
+			warn("tracefs path too long\n");
+			return;
+		}
 		if ((trace_fd = open(path, O_WRONLY)) < 0)
 			warn("unable to open tracing_on file: %s\n", path);
 	}
@@ -408,7 +416,7 @@ static int trace_file_exists(char *name)
 
 static void tracefs_prepare(void)
 {
-	fileprefix = get_tracefs_prefix();
+	get_tracefs_prefix();
 	if (!trace_file_exists("tracing_enabled") &&
 	    !trace_file_exists("tracing_on"))
 		warn("tracing_enabled or tracing_on not found\n"
