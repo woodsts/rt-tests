@@ -408,10 +408,7 @@ static void close_tracemark_fd(void)
 static int trace_file_exists(char *name)
 {
 	struct stat sbuf;
-	char *tracing_prefix = get_tracefs_prefix();
-	char path[MAX_PATH];
-	strcat(strcpy(path, tracing_prefix), name);
-	return stat(path, &sbuf) ? 0 : 1;
+	return stat(tracefs_prefix, &sbuf) ? 0 : 1;
 }
 
 static void tracefs_prepare(void)
