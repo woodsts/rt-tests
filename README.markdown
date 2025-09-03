@@ -57,15 +57,16 @@ then probably be regarded as real-time capable.
 
 What, however, if the latency is higher than acceptable? Then, the famous
 "*latency fighting*" begins. For this purpose, the cyclictest tool provides the
-`-b` option that causes a function tracing to be written to
-`/sys/kernel/debug/tracing/trace`, if a specified latency threshold was
-exceeded, for example:
+`--breaktrace` option to halt tracing if the specified latency was exceeded. A
+tracer must be configured upfront. The resulting trace can be invastigated in
+`/sys/kernel/tracing/trace`, for example:
 
-    ./cyclictest -a -t -n -p99 -f -b100
+    echo function > /sys/kernel/tracing/current_tracer
+    cyclictest -a -t -n -p99 --tracemark --breaktrace 100
 
 This causes the program to abort execution, if the latency value exceeds 100
 microseconds; the culprit can then be found in the trace output at
-`/sys/kernel/debug/tracing/trace`.
+`/sys/kernel/tracing/trace`.
 The kernel function that was executed just before a latency of more than 100
 microseconds was detected is marked with an exclamation mark such as
 
@@ -80,7 +81,7 @@ latency.
 If the trace output is not obvious, it can be submitted to the OSADL Latency
 Fight Support Service at
 [latency-fighters@osadl.org](mailto:latency-fighters@osadl.org).
-In addition to the output of `cat /sys/kernel/debug/tracing/trace`, the output
+In addition to the output of `cat /sys/kernel/tracing/trace`, the output
 of `lspci` and the `.config` file that was used to build the kernel in question
 must be submitted. We are sure you understand that OSADL members will be served
 first, but we promise to do our best to help everybody to successfully fight
