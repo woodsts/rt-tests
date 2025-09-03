@@ -11,7 +11,7 @@
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 int check_privs(void);
-char *get_debugfileprefix(void);
+char *get_tracefs_prefix(void);
 int get_tracers(char ***);
 int valid_tracer(char *);
 

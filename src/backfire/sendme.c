@@ -45,7 +45,7 @@ static int interval = 1000;
 static int kernvar(int mode, const char *name, char *value, size_t sizeofvalue)
 {
 	char filename[128];
-	char *fileprefix = get_debugfileprefix();
+	char *fileprefix = get_tracefs_prefix();
 	int retval = 1;
 	int path;
 	size_t len_prefix = strlen(fileprefix), len_name = strlen(name);

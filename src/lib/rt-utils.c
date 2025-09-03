@@ -32,7 +32,7 @@
 #define  MAX_COMMAND_LINE 4096
 #define  MAX_TS_SIZE 64
 
-static char debugfileprefix[MAX_PATH];
+static char tracefs_prefix[MAX_PATH];
 static char *fileprefix;
 static int trace_fd = -1;
 static int tracemark_fd = -1;
@@ -41,28 +41,21 @@ static char test_cmdline[MAX_COMMAND_LINE];
 static char ts_start[MAX_TS_SIZE];
 
 /*
- * Finds the tracing directory in a mounted debugfs
+ * Finds the tracing directory
  */
-char *get_debugfileprefix(void)
+char *get_tracefs_prefix(void)
 {
 	char type[100];
 	FILE *fp;
-	int size;
 	int found = 0;
 	struct stat s;
 
-	if (debugfileprefix[0] != '\0')
+	if (tracefs_prefix[0] != '\0')
 		goto out;
 
 	/* look in the "standard" mount point first */
-	if ((stat("/sys/kernel/debug/tracing", &s) == 0) && S_ISDIR(s.st_mode)) {
-		strcpy(debugfileprefix, "/sys/kernel/debug/tracing/");
-		goto out;
-	}
-
-	/* now look in the "other standard" place */
-	if ((stat("/debug/tracing", &s) == 0) && S_ISDIR(s.st_mode)) {
-		strcpy(debugfileprefix, "/debug/tracing/");
+	if ((stat("/sys/kernel/tracing", &s) == 0) && S_ISDIR(s.st_mode)) {
+		strcpy(tracefs_prefix, "/sys/kernel/tracing/");
 		goto out;
 	}
 
@@ -73,14 +66,8 @@ char *get_debugfileprefix(void)
 	while (fscanf(fp, "%*s %"
 		      STR(MAX_PATH)
 		      "s %99s %*s %*d %*d\n",
-		      debugfileprefix, type) == 2) {
-		if (strcmp(type, "debugfs") == 0) {
-			found = 1;
-			break;
-		}
-		/* stupid check for systemd-style autofs mount */
-		if ((strcmp(debugfileprefix, "/sys/kernel/debug") == 0) &&
-		    (strcmp(type, "systemd") == 0)) {
+		      tracefs_prefix, type) == 2) {
+		if (strcmp(type, "tracefs") == 0) {
 			found = 1;
 			break;
 		}
@@ -88,15 +75,11 @@ char *get_debugfileprefix(void)
 	fclose(fp);
 
 	if (!found) {
-		debugfileprefix[0] = '\0';
+		tracefs_prefix[0] = '\0';
 		goto out;
 	}
-
-	size = sizeof(debugfileprefix) - strlen(debugfileprefix);
-	strncat(debugfileprefix, "/tracing/", size);
-
 out:
-	return debugfileprefix;
+	return tracefs_prefix;
 }
 
 static char **tracer_list;
@@ -113,7 +96,7 @@ int get_tracers(char ***list)
 	int ret;
 	FILE *fp;
 	char buffer[CHUNKSZ];
-	char *prefix = get_debugfileprefix();
+	char *prefix = get_tracefs_prefix();
 	char *tmpbuf = NULL;
 	char *ptr;
 	int tmpsz = 0;
@@ -193,7 +176,7 @@ int valid_tracer(char *tracername)
  */
 int setevent(char *event, char *val)
 {
-	char *prefix = get_debugfileprefix();
+	char *prefix = get_tracefs_prefix();
 	char buffer[MAX_PATH];
 	int fd;
 	int ret;
@@ -417,19 +400,19 @@ static void close_tracemark_fd(void)
 static int trace_file_exists(char *name)
 {
 	struct stat sbuf;
-	char *tracing_prefix = get_debugfileprefix();
+	char *tracing_prefix = get_tracefs_prefix();
 	char path[MAX_PATH];
 	strcat(strcpy(path, tracing_prefix), name);
 	return stat(path, &sbuf) ? 0 : 1;
 }
 
-static void debugfs_prepare(void)
+static void tracefs_prepare(void)
 {
-	fileprefix = get_debugfileprefix();
+	fileprefix = get_tracefs_prefix();
 	if (!trace_file_exists("tracing_enabled") &&
 	    !trace_file_exists("tracing_on"))
 		warn("tracing_enabled or tracing_on not found\n"
-		     "debug fs not mounted");
+		     "tracefs not found");
 }
 
 void tracemark(char *fmt, ...)
@@ -455,7 +438,7 @@ void tracemark(char *fmt, ...)
 
 void enable_trace_mark(void)
 {
-	debugfs_prepare();
+	tracefs_prepare();
 	open_tracemark_fd();
 }
 

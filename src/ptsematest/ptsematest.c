@@ -107,7 +107,7 @@ void *semathread(void *param)
 			if (par->tracelimit && par->maxdiff > par->tracelimit) {
 				char tracing_enabled_file[MAX_PATH];
 
-				strcpy(tracing_enabled_file, get_debugfileprefix());
+				strcpy(tracing_enabled_file, get_tracefs_prefix());
 				strcat(tracing_enabled_file, "tracing_on");
 				int tracing_enabled =
 				    open(tracing_enabled_file, O_WRONLY);
