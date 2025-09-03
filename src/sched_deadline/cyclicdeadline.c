@@ -167,17 +167,8 @@ static int fill_sched_features(char *path)
 	if (ret)
 		return 0;
 
-	ret = snprintf(path, MAX_PATH, "%s/sched_features", debugfs);
-	if (ret >= MAX_PATH)
-		return -1;
-	ret = check_file_exists(path);
-	if (ret)
-		return 0;
-
 	memset(path, 0, MAX_PATH);
-
 	return ret;
-
 }
 
 static int setup_hr_tick(void)
