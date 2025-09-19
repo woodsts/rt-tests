@@ -30,6 +30,7 @@
 #include <getopt.h>
 #include <string.h>
 #include <signal.h>
+#include <time.h>
 #include <errno.h>
 
 #include <sys/types.h>
@@ -67,7 +68,7 @@ static const char *get_state_name(int state)
 static int quiet;
 static char jsonfile[MAX_PATH];
 
-static int got_sigchld;
+volatile int got_sigchld;
 
 enum option_value { OPT_NFORKS=1, OPT_NITERS, OPT_HELP, OPT_JSON, OPT_QUIET };
 
@@ -127,23 +128,33 @@ static int do_wait(pid_t *wait_pid, int *ret_sig)
 	return STATE_UNKNOWN;
 }
 
-static int check_sigchld(void)
+static int check_sigchld(sigset_t *set)
 {
-	int i;
+
+	struct timespec timeout;
+
+	timeout.tv_sec = 10;
+	timeout.tv_nsec = 0;
+	int recv_sig = 0;
+
 	/*
-	 * The signal is asynchronous so give it some
-	 * time to arrive.
+	 * Check the handler flag, then if need be, wait for the signal to
+	 * arrive
 	 */
-	for (i = 0; i < 10 && !got_sigchld; i++)
-		usleep(1000); /* 10 msecs */
-	for (i = 0; i < 10 && !got_sigchld; i++)
-		usleep(2000); /* 20 + 10 = 30 msecs */
-	for (i = 0; i < 10 && !got_sigchld; i++)
-		usleep(4000); /* 40 + 30 = 70 msecs */
-	for (i = 0; i < 10 && !got_sigchld; i++)
-		usleep(8000); /* 80 + 70 = 150 msecs */
-	for (i = 0; i < 10 && !got_sigchld; i++)
-		usleep(16000); /* 160 + 150 = 310 msecs */
+	if (!got_sigchld)
+		recv_sig = sigtimedwait(set, NULL, &timeout);
+
+	if (sigprocmask(SIG_UNBLOCK, set, NULL) == -1) {
+		printf("EXITING, ERROR: unable to mask signal set\n");
+		exit(1);
+	}
+
+	if (recv_sig == -1) {
+		printf("EXITING, ERROR: Timeout: no signal received in 10 seconds\n");
+		exit(1);
+	} else if (recv_sig == SIGCHLD) {
+		got_sigchld = 1;
+	}
 
 	return got_sigchld;
 }
@@ -196,6 +207,20 @@ static int forktests(int testid)
 	}
 
 	/*
+	 * Block the signal before it is generated
+	 * Ensures we can synchronously wait for it.
+	 */
+	sigset_t set;
+
+	sigemptyset(&set);
+	sigaddset(&set, SIGCHLD);
+
+	if (sigprocmask(SIG_BLOCK, &set, NULL) == -1) {
+		printf("EXITING, ERROR: unable to mask signal set\n");
+		exit(1);
+	}
+
+	/*
 	 * Attach to the child.
 	 */
 	pstatus = ptrace(PTRACE_ATTACH, child, NULL, NULL);
@@ -224,7 +249,7 @@ static int forktests(int testid)
 		       ret_sig);
 		exit(1);
 	}
-	if (!check_sigchld()) {
+	if (!check_sigchld(&set)) {
 		printf("forktest#%d/%d: EXITING, ERROR: "
 		       "wait on PTRACE_ATTACH saw a SIGCHLD count of %d, should be 1\n",
 		       testid, getpid(), got_sigchld);
@@ -238,6 +263,12 @@ static int forktests(int testid)
 	 * step the tracee.
 	 */
 	for (i = 0; i < nsteps; i++) {
+
+		if (sigprocmask(SIG_BLOCK, &set, NULL) == -1) {
+			printf("EXITING, ERROR: unable to mask signal set\n");
+			exit(1);
+		}
+
 		pstatus = ptrace(PTRACE_SINGLESTEP, child, NULL, NULL);
 
 		if (pstatus) {
@@ -271,7 +302,7 @@ static int forktests(int testid)
 			       testid, getpid(), i, ret_sig);
 			exit(1);
 		}
-		if (!check_sigchld()) {
+		if (!check_sigchld(&set)) {
 			printf("forktest#%d/%d: EXITING, ERROR: "
 			       "wait on PTRACE_SINGLESTEP #%d: no SIGCHLD seen "
 			       "(signal count == 0), signo %d\n",
