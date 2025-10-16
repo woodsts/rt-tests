@@ -38,6 +38,17 @@ def group_sep(num_hex):
     return ','.join([num_hex[max(i - 8, 0):i] for i in range(len(num_hex), 0, -8)][::-1])
 
 
+def key_values(fields):
+    """ Extract key:value pairs from a list of fields and return them as a dictionary """
+    return {
+        k: v
+        for field in fields
+            if ':' in field
+                for k, v in [field.split(":", 1)]
+                    if k and v
+    }
+
+
 #
 # Class used to manage mounting and umounting the debugfs
 # filesystem. Note that if an instance of this class mounts
@@ -242,19 +253,21 @@ class Tracer(Detector):
 
     class Sample:
         'private class for tracer sample data'
-        __slots__ = 'cpu', 'timestamp', 'inner', 'outer'
+        __slots__ = 'cpu', 'timestamp', 'inner', 'outer', 'count'
 
         def __init__(self, line):
             fields = line.split()
+            kv = key_values(fields)
             self.cpu = int(fields[1][1:-1])
             i, o = fields[6].split('/')
             ts = fields[7][3:]
             self.timestamp = str(ts)
             self.inner = int(i)
             self.outer = int(o)
+            self.count = int(kv["count"])
 
         def __str__(self):
-            return f"ts: {self.timestamp}, inner:{self.inner}, outer:{self.outer}, cpu:{self.cpu}"
+            return f"ts: {self.timestamp}, inner:{self.inner}, outer:{self.outer}, cpu:{self.cpu}, count:{self.count}"
 
         def display(self):
             """ convert object to string and print """
@@ -286,7 +299,7 @@ class Tracer(Detector):
 
     def get(self, field):
         if field == "count":
-            return len(self.samples)
+            return sum(s.count for s in self.samples)
         if field == "max":
             max = 0
             for values in self.samples:
