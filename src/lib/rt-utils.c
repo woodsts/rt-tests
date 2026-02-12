@@ -437,8 +437,8 @@ void tracemark(char *fmt, ...)
 
 	/* write the tracemark message */
 	ret = write(tracemark_fd, tracebuf, len);
-	if (ret != 2)
-		warn("trace stop write failed");
+	if (ret != len)
+		warn("trace mark write failed\n");
 }
 
 void tracing_stop(void)
@@ -449,7 +449,7 @@ void tracing_stop(void)
 		return;
 	ret = write(trace_fd, "0\n", 2);
 	if (ret != 2)
-		warn("trace stop write failed");
+		warn("trace stop write failed\n");
 }
 
 void enable_trace_mark(void)
