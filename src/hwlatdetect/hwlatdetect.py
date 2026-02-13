@@ -258,7 +258,7 @@ class Tracer(Detector):
         def __init__(self, line):
             fields = line.split()
             kv = key_values(fields)
-            self.cpu = int(fields[1][1:-1])
+            self.cpu = int(fields[1][1:-1]) if fields[1][0] == '[' else int(fields[1][:-5])
             i, o = fields[6].split('/')
             ts = fields[7][3:]
             self.timestamp = str(ts)
