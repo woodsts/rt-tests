@@ -264,10 +264,12 @@ class Tracer(Detector):
             self.timestamp = str(ts)
             self.inner = int(i)
             self.outer = int(o)
-            self.count = int(kv["count"])
+            self.count = int(kv["count"]) if "count" in kv else None
 
         def __str__(self):
-            return f"ts: {self.timestamp}, inner:{self.inner}, outer:{self.outer}, cpu:{self.cpu}, count:{self.count}"
+            if self.count is not None:
+                return f"ts: {self.timestamp}, inner:{self.inner}, outer:{self.outer}, cpu:{self.cpu}, count:{self.count}"
+            return f"ts: {self.timestamp}, inner:{self.inner}, outer:{self.outer}, cpu:{self.cpu}"
 
         def display(self):
             """ convert object to string and print """
@@ -299,7 +301,10 @@ class Tracer(Detector):
 
     def get(self, field):
         if field == "count":
-            return sum(s.count for s in self.samples)
+            # Use new count field if available, otherwise fall back to sample count
+            if self.samples and self.samples[0].count is not None:
+                return sum(s.count for s in self.samples)
+            return len(self.samples)
         if field == "max":
             max = 0
             for values in self.samples:
