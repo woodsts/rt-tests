@@ -257,8 +257,22 @@ class Tracer(Detector):
 
         def __init__(self, line):
             fields = line.split()
+            if len(fields) < 8:
+                raise ValueError(f"Unexpected trace format: {line}")
+
             kv = key_values(fields)
-            self.cpu = int(fields[1][1:-1]) if fields[1][0] == '[' else int(fields[1][:-5])
+
+            # Parse CPU number from either [NNN] or NNd.... format
+            cpu_field = fields[1]
+            if not cpu_field:
+                raise ValueError(f"Empty CPU field in: {line}")
+
+            if cpu_field[0] == '[':
+                # nolatency-format: [007]
+                self.cpu = int(cpu_field[1:-1])
+            else:
+                # latency-format: 13d....
+                self.cpu = int(cpu_field[:-5])
             i, o = fields[6].split('/')
             ts = fields[7][3:]
             self.timestamp = str(ts)
