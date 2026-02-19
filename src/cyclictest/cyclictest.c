@@ -1147,7 +1147,7 @@ static void process_options(int argc, char *argv[], int max_cpus)
 			{"deepest-idle-state", required_argument,	NULL, OPT_DEEPEST_IDLE_STATE },
 			{NULL, 0, NULL, 0 },
 		};
-		int c = getopt_long(argc, argv, "a::A::b:c:d:D:F:h:H:i:l:MNo:p:mqrRsSt::uvD:x",
+		int c = getopt_long(argc, argv, "a::A::b:c:d:D:F:h:H:i:l:MNo:p:mqrRsSt::uvx",
 				    long_options, &option_index);
 		if (c == -1)
 			break;
