@@ -306,6 +306,8 @@ class Tracer(Detector):
             raise DetectorNotAvailable("hwlat", "hwlat tracer not available")
         self.type = "tracer"
         self.samples = []
+        self.first = None
+        self.last = None
         self.set("enable", 0)
         self.set('current_tracer', 'hwlat')
 
@@ -338,6 +340,8 @@ class Tracer(Detector):
                 pollcnt += 1
                 val = self.get_sample()
                 while val:
+                    self.first = self.first or val.timestamp
+                    self.last = val.timestamp
                     self.samples.append(val)
                     if watch:
                         val.display()
@@ -558,6 +562,11 @@ if __name__ == '__main__':
 
     exceeding = detect.get("count")
     info(f"Samples exceeding threshold: {exceeding}")
+
+    if exceeding > 1:
+        mtbf = ((float(detect.last) - float(detect.first)) * int(detect.get('window'))
+                / ((exceeding - 1) * int(detect.get('width'))))
+        info(f"MTBF: {mtbf:.3f} seconds")
 
     if detect.have_msr:
         finishsmi = detect.getsmicounts()
