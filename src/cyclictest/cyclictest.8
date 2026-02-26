@@ -17,7 +17,7 @@
 cyclictest \- High resolution test program
 .SH SYNOPSIS
 .SY cyclictest
-.RI "[ \-hfmnqrsvMS ] [\-a " proc " ] [\-A " align " ] [\-b " usec " ] [\-c " clock " ] [\-d " dist " ] \
+.RI "[ \-hfmnqrsvMS ] [\-a " proc " ] [\-A " aligned " ] [\-b " usec " ] [\-c " clock " ] [\-d " dist " ] \
 [\-h " histogram " ] [\-i " intv " ] [\-\-json " filename " ] [\-l " loop " ] [\-o " red " ] \
 [\-p " prio " ] [\-t " num " ] [\-D " time "] [\-w] [\-W] [\-y " policy " ] [ \-S | \-U ]"
 
@@ -47,7 +47,7 @@ field in /proc/cpuinfo.  See numa(3) for more information on specifying CPU sets
 * Support for CPU sets requires libnuma version >= 2.  For libnuma v1, PROC-SET,
 if specified, must be a single CPU number.
 .TP
-.B \-A, \-\-align=USEC
+.B \-A, \-\-aligned=USEC
 Align thread wakeups to a specific offset in microseconds
 .TP
 .B \-b, \-\-breaktrace=USEC
