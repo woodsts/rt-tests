@@ -564,8 +564,9 @@ if __name__ == '__main__':
     info(f"Samples exceeding threshold: {exceeding}")
 
     if exceeding > 1:
-        mtbf = ((float(detect.last) - float(detect.first)) * int(detect.get('window'))
-                / ((exceeding - 1) * int(detect.get('width'))))
+        width = int(detect.get('width'))
+        if width > 0:
+            mtbf = (((float(detect.last) - float(detect.first)) * int(detect.get('window'))) / ((exceeding - 1) * width))
         info(f"MTBF: {mtbf:.3f} seconds")
 
     if detect.have_msr:
