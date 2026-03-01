@@ -1472,6 +1472,7 @@ static void sighand(int sig)
 			return;
 		}
 		rstat_ftruncate(rstat_fd, 0);
+		lseek(rstat_fd, 0, SEEK_SET);
 		quiet = 0;
 		dprintf(rstat_fd, "#---------------------------\n");
 		dprintf(rstat_fd, "# cyclictest current status:\n");
