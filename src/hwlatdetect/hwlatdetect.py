@@ -253,7 +253,8 @@ class Tracer(Detector):
 
     class Sample:
         'private class for tracer sample data'
-        __slots__ = 'cpu', 'timestamp', 'inner', 'outer', 'count'
+        __slots__ = 'cpu', 'timestamp', 'delta', 'inner', 'outer', 'count'
+        prev = float('nan')
 
         def __init__(self, line):
             fields = line.split()
@@ -276,14 +277,16 @@ class Tracer(Detector):
             i, o = fields[6].split('/')
             ts = fields[7][3:]
             self.timestamp = str(ts)
+            ts_float = float(ts)
+            self.delta = ts_float - self.__class__.prev
+            self.__class__.prev = ts_float
             self.inner = int(i)
             self.outer = int(o)
             self.count = int(kv["count"]) if "count" in kv else None
 
         def __str__(self):
-            if self.count is not None:
-                return f"ts: {self.timestamp}, inner:{self.inner}, outer:{self.outer}, cpu:{self.cpu}, count:{self.count}"
-            return f"ts: {self.timestamp}, inner:{self.inner}, outer:{self.outer}, cpu:{self.cpu}"
+            s = f"ts: {self.timestamp}, delta:{self.delta:.6f}, inner:{self.inner}, outer:{self.outer}, cpu:{self.cpu}"
+            return s if self.count is None else s + f", count:{self.count}"
 
         def display(self):
             """ convert object to string and print """
