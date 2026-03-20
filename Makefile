@@ -235,7 +235,7 @@ install_hwlatdetect: hwlatdetect
 		mkdir -p "$(DESTDIR)$(bindir)" ; \
 		install -D -m 755 src/hwlatdetect/hwlatdetect.py $(DESTDIR)$(PYLIB)/hwlatdetect.py ; \
 		rm -f "$(DESTDIR)$(bindir)/hwlatdetect" ; \
-		ln -s $(PYLIB)/hwlatdetect.py "$(DESTDIR)$(bindir)/hwlatdetect" ; \
+		ln -rs "$(DESTDIR)$(PYLIB)/hwlatdetect.py" "$(DESTDIR)$(bindir)/hwlatdetect" ; \
 	fi
 
 .PHONY: install_get_cyclictest_snapshot
@@ -244,7 +244,7 @@ install_get_cyclictest_snapshot: get_cyclictest_snapshot
 		mkdir -p "${DESTDIR}${bindir}" ; \
 		install -D -m 755 src/cyclictest/get_cyclictest_snapshot.py ${DESTDIR}${PYLIB}/get_cyclictest_snapshot.py ; \
 		rm -f "${DESTDIR}${bindir}/get_cyclictest_snapshot" ; \
-		ln -s ${PYLIB}/get_cyclictest_snapshot.py "${DESTDIR}${bindir}/get_cyclictest_snapshot" ; \
+		ln -rs "${DESTDIR}${PYLIB}/get_cyclictest_snapshot.py" "${DESTDIR}${bindir}/get_cyclictest_snapshot" ; \
 	fi
 
 .PHONY: install_manpages
