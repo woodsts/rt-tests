@@ -950,8 +950,8 @@ static void display_help(int error)
 	       "-A USEC  --aligned=USEC    align thread wakeups to a specific offset\n"
 	       "-b USEC  --breaktrace=USEC send break trace command when latency > USEC\n"
 	       "-c CLOCK --clock=CLOCK     select clock\n"
-	       "                           0 = CLOCK_MONOTONIC (default)\n"
-	       "                           1 = CLOCK_REALTIME\n"
+	       "                           monotonic (default)\n"
+	       "                           realtime\n"
 	       "         --deepest-idle-state=n\n"
 	       "                           Reduce exit from idle latency by limiting idle state\n"
 	       "                           up to n on used cpus (-1 disables all idle states).\n"
@@ -1043,7 +1043,11 @@ static int handleclock(const char *clockarg)
 {
 	if (strcmp(clockarg, "0") == 0)
 		used_clock = CLOCK_MONOTONIC;
+	else if (strcmp(clockarg, "monotonic") == 0)
+		used_clock = CLOCK_MONOTONIC;
 	else if (strcmp(clockarg, "1") == 0)
+		used_clock = CLOCK_REALTIME;
+	else if (strcmp(clockarg, "realtime") == 0)
 		used_clock = CLOCK_REALTIME;
 	else
 		return 1;
