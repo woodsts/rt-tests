@@ -671,7 +671,9 @@ static void *timerthread(void *param)
 		sigev.sigev_notify = SIGEV_THREAD_ID | SIGEV_SIGNAL;
 		sigev.sigev_signo = par->signal;
 		sigev.sigev_notify_thread_id = stat->tid;
-		timer_create(par->clock, &sigev, &timer);
+		if (timer_create(par->clock, &sigev, &timer))
+			fatal("timerthread%d: failed to create timer for clock %d, errno: %d\n",
+			      par->cpu, par->clock, errno);
 		tspec.it_interval = interval;
 	}
 
