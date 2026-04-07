@@ -62,12 +62,18 @@
 static int clock_nanosleep(clockid_t clock_id, int flags, const struct timespec *req,
 			   struct timespec *rem)
 {
+	int retval;
+
 	if (clock_id == CLOCK_THREAD_CPUTIME_ID)
 		return -EINVAL;
 	if (clock_id == CLOCK_PROCESS_CPUTIME_ID)
 		clock_id = MAKE_PROCESS_CPUCLOCK(0, CPUCLOCK_SCHED);
 
-	return syscall(__NR_clock_nanosleep, clock_id, flags, req, rem);
+	retval = syscall(__NR_clock_nanosleep, clock_id, flags, req, rem);
+	if (retval == 0)
+		return 0;
+
+	return errno;
 }
 
 int sched_setaffinity(__pid_t __pid, size_t __cpusetsize,
