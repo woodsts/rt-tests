@@ -52,6 +52,10 @@
 #define SCHED_NORMAL SCHED_OTHER
 #endif
 
+#ifndef CLOCK_AUX
+#define CLOCK_AUX 16
+#endif
+
 #define sigev_notify_thread_id _sigev_un._tid
 
 #ifdef __UCLIBC__
@@ -952,6 +956,7 @@ static void display_help(int error)
 	       "-c CLOCK --clock=CLOCK     select clock\n"
 	       "                           monotonic (default)\n"
 	       "                           realtime\n"
+	       "                           aux0 - aux7\n"
 	       "         --deepest-idle-state=n\n"
 	       "                           Reduce exit from idle latency by limiting idle state\n"
 	       "                           up to n on used cpus (-1 disables all idle states).\n"
@@ -1049,6 +1054,22 @@ static int handleclock(const char *clockarg)
 		used_clock = CLOCK_REALTIME;
 	else if (strcmp(clockarg, "realtime") == 0)
 		used_clock = CLOCK_REALTIME;
+	else if (strcmp(clockarg, "aux0") == 0)
+		used_clock = CLOCK_AUX + 0;
+	else if (strcmp(clockarg, "aux1") == 0)
+		used_clock = CLOCK_AUX + 1;
+	else if (strcmp(clockarg, "aux2") == 0)
+		used_clock = CLOCK_AUX + 2;
+	else if (strcmp(clockarg, "aux3") == 0)
+		used_clock = CLOCK_AUX + 3;
+	else if (strcmp(clockarg, "aux4") == 0)
+		used_clock = CLOCK_AUX + 4;
+	else if (strcmp(clockarg, "aux5") == 0)
+		used_clock = CLOCK_AUX + 5;
+	else if (strcmp(clockarg, "aux6") == 0)
+		used_clock = CLOCK_AUX + 6;
+	else if (strcmp(clockarg, "aux7") == 0)
+		used_clock = CLOCK_AUX + 7;
 	else
 		return 1;
 
