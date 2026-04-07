@@ -1022,7 +1022,7 @@ static int priority;
 static int policy = SCHED_OTHER;	/* default policy if not specified */
 static int num_threads = 1;
 static int max_cycles;
-static int clocksel = 0;
+static clockid_t used_clock;
 static int quiet;
 static int interval = DEFAULT_INTERVAL;
 static int distance = -1;
@@ -1031,10 +1031,17 @@ static struct bitmask *main_affinity_mask = NULL;
 static int smp = 0;
 static int setaffinity = AFFINITY_UNSPECIFIED;
 
-static int clocksources[] = {
-	CLOCK_MONOTONIC,
-	CLOCK_REALTIME,
-};
+static int handleclock(const char *clockarg)
+{
+	if (strcmp(clockarg, "0") == 0)
+		used_clock = CLOCK_MONOTONIC;
+	else if (strcmp(clockarg, "1") == 0)
+		used_clock = CLOCK_REALTIME;
+	else
+		return 1;
+
+	return 0;
+}
 
 static void handlepolicy(char *polname)
 {
@@ -1195,7 +1202,7 @@ static void process_options(int argc, char *argv[], int max_cpus)
 			tracelimit = atoi(optarg); break;
 		case 'c':
 		case OPT_CLOCK:
-			clocksel = atoi(optarg); break;
+			error |= handleclock(optarg); break;
 		case OPT_DEFAULT_SYSTEM:
 			power_management = 1; break;
 		case 'd':
@@ -1376,9 +1383,6 @@ static void process_options(int argc, char *argv[], int max_cpus)
 			fatal("SMI counter is not supported "
 			      "on this processor\n");
 	}
-
-	if (clocksel < 0 || clocksel > ARRAY_SIZE(clocksources))
-		error = 1;
 
 	if (oscope_reduction < 1)
 		error = 1;
@@ -1983,7 +1987,6 @@ int main(int argc, char **argv)
 		warn("High resolution timers not available\n");
 
 	if (check_clock_resolution) {
-		int clock;
 		uint64_t diff;
 		int k;
 		uint64_t min_non_zero_diff = UINT64_MAX;
@@ -1994,9 +1997,7 @@ int main(int argc, char **argv)
 		struct timespec *time;
 		int times;
 
-		clock = clocksources[clocksel];
-
-		if (clock_getres(clock, &res))
+		if (clock_getres(used_clock, &res))
 			warn("clock_getres failed");
 		else
 			reported_resolution = (NSEC_PER_SEC * res.tv_sec) + res.tv_nsec;
@@ -2009,9 +2010,9 @@ int main(int argc, char **argv)
 		 * This will reliably capture resolution <= 500 usec.
 		 */
 		times = 1000;
-		clock_gettime(clock, &prev);
+		clock_gettime(used_clock, &prev);
 		for (k=0; k < times; k++)
-			clock_gettime(clock, &now);
+			clock_gettime(used_clock, &now);
 
 		diff = calcdiff_ns(now, prev);
 		if (diff == 0) {
@@ -2035,7 +2036,7 @@ int main(int argc, char **argv)
 		time = calloc(times, sizeof(*time));
 
 		for (k=0; k < times; k++)
-			clock_gettime(clock, &time[k]);
+			clock_gettime(used_clock, &time[k]);
 
 		info(ct_debug, "For %d consecutive calls to clock_gettime():\n", times);
 		info(ct_debug, "time, delta time (nsec)\n");
@@ -2193,7 +2194,7 @@ int main(int argc, char **argv)
 		}
 		if (priospread)
 			priority--;
-		par->clock = clocksources[clocksel];
+		par->clock = used_clock;
 		par->mode = mode;
 		par->timermode = timermode;
 		par->signal = signum;
