@@ -773,7 +773,7 @@ static void *timerthread(void *param)
 						      &next, NULL);
 				if (ret != 0) {
 					if (ret != EINTR)
-						warn("clock_nanosleep failed. errno: %d\n", errno);
+						warn("clock_nanosleep failed. errno: %d\n", ret);
 					goto out;
 				}
 			} else {
@@ -787,7 +787,7 @@ static void *timerthread(void *param)
 					TIMER_RELTIME, &interval, NULL);
 				if (ret != 0) {
 					if (ret != EINTR)
-						warn("clock_nanosleep() failed. errno: %d\n", errno);
+						warn("clock_nanosleep() failed. errno: %d\n", ret);
 					goto out;
 				}
 				next.tv_sec = now.tv_sec + interval.tv_sec;
