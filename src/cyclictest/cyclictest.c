@@ -1054,23 +1054,13 @@ static int handleclock(const char *clockarg)
 		used_clock = CLOCK_REALTIME;
 	else if (strcmp(clockarg, "realtime") == 0)
 		used_clock = CLOCK_REALTIME;
-	else if (strcmp(clockarg, "aux0") == 0)
-		used_clock = CLOCK_AUX + 0;
-	else if (strcmp(clockarg, "aux1") == 0)
-		used_clock = CLOCK_AUX + 1;
-	else if (strcmp(clockarg, "aux2") == 0)
-		used_clock = CLOCK_AUX + 2;
-	else if (strcmp(clockarg, "aux3") == 0)
-		used_clock = CLOCK_AUX + 3;
-	else if (strcmp(clockarg, "aux4") == 0)
-		used_clock = CLOCK_AUX + 4;
-	else if (strcmp(clockarg, "aux5") == 0)
-		used_clock = CLOCK_AUX + 5;
-	else if (strcmp(clockarg, "aux6") == 0)
-		used_clock = CLOCK_AUX + 6;
-	else if (strcmp(clockarg, "aux7") == 0)
-		used_clock = CLOCK_AUX + 7;
-	else
+	else if (strncmp(clockarg, "aux", 3) == 0 && strlen(clockarg) == 4) {
+		int aux_num = clockarg[3] - '0';
+		if (aux_num >= 0 && aux_num <= 7)
+			used_clock = CLOCK_AUX + aux_num;
+		else
+			return 1;
+	} else
 		return 1;
 
 	return 0;
