@@ -14,11 +14,13 @@ import os.path
 import subprocess
 import sys
 import time
+from datetime import datetime
 
 version = "0.8"
 debugging = False
 quiet = False
 watch = False
+args = None
 
 
 def debug(dstr):
@@ -284,8 +286,18 @@ class Tracer(Detector):
             self.outer = int(o)
             self.count = int(kv["count"]) if "count" in kv else None
 
+        def format_timestamp(self):
+            """Format timestamp with %n (nanoseconds) support."""
+            if not args.time_format:
+                return self.timestamp
+            p = self.timestamp.split('.')
+            ns = p[1] if len(p) > 1 else '0' * 9
+            t = datetime.fromtimestamp(float(f"{p[0]}.{ns[:6]}"))
+            return t.strftime(args.time_format.replace('%n', ns))
+
         def __str__(self):
-            s = f"ts: {self.timestamp}, delta:{self.delta:.6f}, inner:{self.inner}, outer:{self.outer}, cpu:{self.cpu}"
+            s = f"ts: {self.format_timestamp()}"
+            s += f", delta:{self.delta:.6f}, inner:{self.inner}, outer:{self.outer}, cpu:{self.cpu}"
             return s if self.count is None else s + f", count:{self.count}"
 
         def display(self):
@@ -471,6 +483,9 @@ if __name__ == '__main__':
     parser.add_argument("--watch", action="store_true", default=False,
                         dest="watch",
                         help="print sample data to stdout as it arrives")
+
+    parser.add_argument("--time-format",
+                        help="strftime format for timestamps (e.g. %%H:%%M:%%S.%%n)")
 
     args = parser.parse_args()
 
