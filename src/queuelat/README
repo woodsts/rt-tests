@@ -1,5 +1,6 @@
+SPDX-License-Identifier: GPL-2.0-or-later
 
-cyclictest does not catch all cases where packet forwarding 
+cyclictest does not catch all cases where packet forwarding
 latency can exceed a given threshold.
 
 Example: 

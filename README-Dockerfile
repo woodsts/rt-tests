@@ -1,8 +1,9 @@
-1
+SPDX-License-Identifier: GPL-2.0-or-later
+
 # README-Dockerfile-rt-tests
 
 ## Introduction
-This README provides detailed instructions for setting up an rt-tests container using Docker or Podman. This Dockerfile will pull a current copy of your code (plus all of your changes) and compile it into a container image for you to test with. This will give you an imbiguous way to test your changes, assuming you are running on a semi-modern host OS. The rt-tests container can be used to test any of the subpackages found under the rt-tests project, but is mainly intended for hwlatdetect and cyclictest.
+This README provides detailed instructions for setting up an rt-tests container using Docker or Podman. This Dockerfile will pull a current copy of your code (plus all of your changes) and compile it into a container image for you to test with. This will give you an unambiguous way to test your changes, assuming you are running on a semi-modern host OS. The rt-tests container can be used to test any of the subpackages found under the rt-tests project, but is mainly intended for hwlatdetect and cyclictest.
 
 ## Prerequisites
 - Docker or Podman installed on your system.
@@ -16,8 +17,8 @@ This README provides detailed instructions for setting up an rt-tests container 
   - Alternatively, install Podman: `sudo apt-get update && sudo apt-get install podman -y`
 
 ### Build the Container
-- Navigate to the root directory of the 'rteval'
-- Build the container image named 'rteval-upstream':
+- Navigate to the root directory of 'rt-tests'
+- Build the container image named 'rt-tests-upstream':
   - For Podman: `sudo podman build -t rt-tests-upstream .`
   - For Docker: `sudo docker build -t rt-tests-upstream .`
 
@@ -40,7 +41,7 @@ This README provides detailed instructions for setting up an rt-tests container 
   - For Podman: `sudo podman run -it --rm --privileged rt-tests-upstream`
   - For Docker: `sudo docker run -it --rm --privileged rt-tests-upstream`  
 
-### Test rteval Build
+### Test rt-tests Build
 - Inside the container, test one of the rt-tests packages you just built: 
   - Command: `cyclictest -D 1s`
   - Command: `hwlatdetect --duration 1`

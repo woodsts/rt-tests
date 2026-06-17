@@ -1,3 +1,5 @@
+SPDX-License-Identifier: GPL-2.0-or-later
+
 DESCRIPTION
 
 The pi_stress program is a stress test that is intended to exercise
@@ -22,20 +24,20 @@ The threads run through a state machine designed to guarantee that a
 low-priority thread holds a mutex while a medium priority thread runs
 (keeping the low-priority thread from releasing the mutex). The
 high-priority thread attempts to acquire the mutex and is blocked
-because of the low-priority thread holding it. If priority inheritence
+because of the low-priority thread holding it. If priority inheritance
 is working, the low-priority thread will receive a priority boost
 (will inherit the high-priority thread's priority) and will then run
 and release the mutex, averting a deadlock.
 
 On a multi-processor system, the admin and reporter threads are run
-one one processor while the inversion groups are run on another
+on one processor while the inversion groups are run on another
 processor. 
 
 
 STEPS TO RUN
 
 Install the pi_tests rpm. If you are running Fedora Core, the simplest
-way do to that is to fetchthe rt-userspace.repo file from:
+way do to that is to fetch the rt-userspace.repo file from:
 
 http://people.redhat.com/~williams/rt-userspace.repo
 
@@ -74,7 +76,7 @@ that have been performed. To stop the test, press any key and a
 summary will be printed to show how many inversions were performed and
 how long the test ran.
 
-To run the test for a specifed time, use the --duraton=<seconds>
+To run the test for a specifed time, use the --duration=<seconds>
 option.
 
 

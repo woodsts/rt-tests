@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
 # Use CentOS Stream 9 as base image
 FROM centos:stream9
 
