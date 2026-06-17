@@ -1,3 +1,5 @@
+SPDX-License-Identifier: GPL-2.0-or-later
+
 # RT-Tests
 
 This repository contains some programs that test various rt-linux features.
@@ -14,7 +16,7 @@ This repository contains some programs that test various rt-linux features.
 To run one test thread per CPU or per CPU core, each thread on a separate
 processor, type
 
-    sudo ./cyclictest -a -t -n -p99
+    sudo ./cyclictest -a -t -p99
 
 On a non-realtime system, you may see something like
 
@@ -62,7 +64,7 @@ tracer must be configured upfront. The resulting trace can be invastigated in
 `/sys/kernel/tracing/trace`, for example:
 
     echo function > /sys/kernel/tracing/current_tracer
-    cyclictest -a -t -n -p99 --tracemark --breaktrace 100
+    cyclictest -a -t -p99 --tracemark --breaktrace 100
 
 This causes the program to abort execution, if the latency value exceeds 100
 microseconds; the culprit can then be found in the trace output at
